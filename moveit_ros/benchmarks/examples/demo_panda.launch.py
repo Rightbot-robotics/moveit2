@@ -5,6 +5,11 @@ from launch_param_builder import ParameterBuilder
 
 
 def generate_launch_description():
+    
+    warehouse_ros_config = {
+        "warehouse_plugin": "warehouse_ros_sqlite::DatabaseConnection",
+        "warehouse_host": "/home/dhruv/sherlock_ws/src/database/warehouse_db.sqlite",
+    }
 
     moveit_ros_benchmarks_config = (
         ParameterBuilder("moveit_ros_benchmarks")
@@ -27,19 +32,20 @@ def generate_launch_description():
         parameters=[
             moveit_ros_benchmarks_config,
             moveit_configs,
+            warehouse_ros_config,
         ],
     )
 
     # Warehouse mongodb server
-    mongodb_server_node = Node(
-        package="warehouse_ros_mongo",
-        executable="mongo_wrapper_ros.py",
-        parameters=[
-            {"warehouse_port": 33829},
-            {"warehouse_host": "localhost"},
-            {"warehouse_plugin": "warehouse_ros_mongo::MongoDatabaseConnection"},
-        ],
-        output="screen",
-    )
+    # mongodb_server_node = Node(
+    #     package="warehouse_ros_mongo",
+    #     executable="mongo_wrapper_ros.py",
+    #     parameters=[
+    #         {"warehouse_port": 33829},
+    #         {"warehouse_host": "localhost"},
+    #         {"warehouse_plugin": "warehouse_ros_mongo::MongoDatabaseConnection"},
+    #     ],
+    #     output="screen",
+    # )
 
-    return LaunchDescription([moveit_ros_benchmarks_node, mongodb_server_node])
+    return LaunchDescription([moveit_ros_benchmarks_node,])

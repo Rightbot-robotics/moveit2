@@ -19,10 +19,10 @@ def generate_launch_description():
 
     # moveit_ros_benchmark demo executable
     moveit_ros_benchmarks_node = Node(
-        node_name="moveit_run_benchmark",
+        name="moveit_run_benchmark",
         package="moveit_ros_benchmarks",
         #   prefix='xterm -e gdb --ex=run --args',
-        node_executable="moveit_combine_predefined_poses_benchmark",
+        executable="moveit_combine_predefined_poses_benchmark",
         output="screen",
         parameters=[
             moveit_ros_benchmarks_config,

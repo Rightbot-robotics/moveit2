@@ -5,8 +5,8 @@
 # Three different planners from OMPL are run a total of 50 times each, with a
 # maximum of 10 seconds per run.  Output is stored in the /tmp/moveit_benchmarks directory.
 warehouse:
-    host: 127.0.0.1
-    port: 33829
+    host: "/home/dhruv/sherlock_ws/src/database/warehouse_db.sqlite"
+    # port: 33829
     scene_name: Kitchen1     # Required
 parameters:
     name: KitchenPick1
