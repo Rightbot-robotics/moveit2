@@ -85,6 +85,25 @@ bool ChompPlanner::solve(const planning_scene::PlanningSceneConstPtr& planning_s
       !req.goal_constraints[0].orientation_constraints.empty())
   {
     RCLCPP_ERROR(LOGGER, "Only joint-space goals are supported");
+    
+
+    if(req.goal_constraints[0].joint_constraints.empty()){
+      RCLCPP_ERROR(LOGGER, "joint constraints empty");
+    }
+    if(!req.goal_constraints[0].position_constraints.empty()){
+      RCLCPP_ERROR(LOGGER, "position_constraints not empty");
+      // auto x = std::to_string(req.goal_constraints[0].position_constraints[0].target_point_offset.x);
+      // auto y = std::to_string(req.goal_constraints[0].position_constraints[0].target_point_offset.y);
+      // auto z = std::to_string(req.goal_constraints[0].position_constraints[0].target_point_offset.z);
+
+      // RCLCPP_ERROR(LOGGER, "position_constraints empty");
+      
+    }
+    if(!req.goal_constraints[0].orientation_constraints.empty()){
+      RCLCPP_ERROR(LOGGER, "orientation_constraints not empty");
+    }
+
+
     res.error_code_.val = moveit_msgs::msg::MoveItErrorCodes::INVALID_GOAL_CONSTRAINTS;
     return false;
   }
