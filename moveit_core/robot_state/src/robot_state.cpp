@@ -709,9 +709,14 @@ void RobotState::updateCollisionBodyTransforms()
         if (ot_id[j])
         {
           global_collision_body_transforms_[index_co + j] = global_link_transforms_[index_l];
+          // Eigen::Matrix3d rotationMatrix = global_collision_body_transforms_[index_co + j].rotation();
+          // Eigen::Vector3d translationVector = global_collision_body_transforms_[index_co + j].translation();
+          // std::cout << "===== Rotation Matrix:" << std::endl << rotationMatrix << std::endl;
+          // std::cout << "===== Translation Vector:" << std::endl << translationVector << std::endl;
         }
         else
         {
+          std::cout << "===== Link not available for update collision body transform" << std::endl;
           global_collision_body_transforms_[index_co + j].affine().noalias() =
               global_link_transforms_[index_l].affine() * ot[j].matrix();
         }

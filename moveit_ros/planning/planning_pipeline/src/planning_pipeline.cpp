@@ -310,6 +310,7 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
       arr.markers.push_back(m);
 
       std::vector<std::size_t> index;
+      path_validity_check_mutex_.lock();
       if (!planning_scene->isPathValid(*res.trajectory, req.path_constraints, req.group_name, false, &index))
       {
         // check to see if there is any problem with the states that are found to be invalid
@@ -387,6 +388,7 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
         RCLCPP_DEBUG(LOGGER, "Planned path was found to be valid when rechecked");
       contacts_publisher_->publish(arr);
     }
+    path_validity_check_mutex_.unlock();
   }
 
   // display solution path if needed

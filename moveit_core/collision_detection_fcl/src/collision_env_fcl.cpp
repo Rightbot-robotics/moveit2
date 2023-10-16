@@ -250,6 +250,9 @@ void CollisionEnvFCL::allocSelfCollisionBroadPhase(const moveit::core::RobotStat
 {
   manager.manager_ = std::make_unique<fcl::DynamicAABBTreeCollisionManagerd>();
 
+  // std::cout << "########## Printing robot state positions" << std::endl;
+  // state.printStatePositions();
+
   constructFCLObjectRobot(state, manager.object_);
   manager.object_.registerTo(manager.manager_.get());
 }

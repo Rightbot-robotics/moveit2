@@ -58,6 +58,7 @@ static const rclcpp::Logger LOGGER = rclcpp::get_logger("moveit_planning_scene.p
 
 const std::string PlanningScene::OCTOMAP_NS = "<octomap>";
 const std::string PlanningScene::DEFAULT_SCENE_NAME = "(noname)";
+std::mutex collision_checking_mutex_;
 
 namespace utilities
 {
@@ -433,12 +434,14 @@ void PlanningScene::checkCollision(const collision_detection::CollisionRequest& 
                                    const moveit::core::RobotState& robot_state,
                                    const collision_detection::AllowedCollisionMatrix& acm) const
 {
+  collision_checking_mutex_.lock();
   // check collision with the world using the padded version
   getCollisionEnv()->checkRobotCollision(req, res, robot_state, acm);
 
   // do self-collision checking with the unpadded version of the robot
   if (!res.collision || (req.contacts && res.contacts.size() < req.max_contacts))
     getCollisionEnvUnpadded()->checkSelfCollision(req, res, robot_state, acm);
+  collision_checking_mutex_.unlock();
 }
 
 void PlanningScene::checkCollisionUnpadded(const collision_detection::CollisionRequest& req,
@@ -2202,6 +2205,8 @@ bool PlanningScene::isPathValid(const robot_trajectory::RobotTrajectory& traject
   for (std::size_t i = 0; i < n_wp; ++i)
   {
     const moveit::core::RobotState& st = trajectory.getWayPoint(i);
+    RCLCPP_INFO(LOGGER, "====== is Path Valid checking. printing state positions");
+    st.printStatePositions();
 
     bool this_state_valid = true;
     if (isStateColliding(st, group, verbose))

@@ -757,10 +757,16 @@ void ompl_interface::ModelBasedPlanningContext::postSolve()
   int iv = ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->getInvalidMotionCount();
   RCLCPP_DEBUG(LOGGER, "There were %d valid motions and %d invalid motions.", v, iv);
 
+  auto time_now = std::chrono::system_clock::now();
+
   // Debug OMPL setup and solution
   std::stringstream debug_out;
-  ompl_simple_setup_->print(debug_out);
+  // ompl_simple_setup_->print(debug_out);
   RCLCPP_DEBUG(LOGGER, "%s", rclcpp::get_c_string(debug_out.str()));
+
+  auto time_passed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()- time_now);
+  RCLCPP_DEBUG(LOGGER, "###### time passed in post solve %d ms", time_passed.count());
+
 }
 
 bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanResponse& res)
