@@ -82,6 +82,8 @@ using ObjectColorMap = std::map<std::string, std_msgs::msg::ColorRGBA>;
 
 /** \brief A map from object names (e.g., attached bodies, collision objects) to their types */
 using ObjectTypeMap = std::map<std::string, object_recognition_msgs::msg::ObjectType>;
+extern std::mutex collision_checking_mutex_;
+
 
 /** \brief This class maintains the representation of the
     environment as seen by a planning instance. The environment
