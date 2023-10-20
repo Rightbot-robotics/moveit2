@@ -99,8 +99,10 @@ CostFn get_cost_function_from_state_validator(const StateValidatorFn& state_vali
       while (!found_invalid_state && interpolation_fraction < 1.0)
       {
         Eigen::VectorXd sample_vec = (1 - interpolation_fraction) * current + interpolation_fraction * next;
-
-        found_invalid_state = !state_validator_fn(sample_vec);
+        if(!sample_vec.hasNaN()) {
+          found_invalid_state = !state_validator_fn(sample_vec);
+        }
+        
         interpolation_fraction += interpolation_step;
       }
 

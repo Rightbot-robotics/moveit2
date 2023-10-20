@@ -364,23 +364,35 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
             {
               // check validity with verbose on
               const moveit::core::RobotState& robot_state = res.trajectory->getWayPoint(it);
-              planning_scene->isStateValid(robot_state, req.path_constraints, req.group_name, true);
+              
+              Eigen::VectorXd joint_positions;
+              //TODO: change joint model group 
+              robot_state.copyJointGroupPositions(robot_model_->getJointModelGroup("arm"), joint_positions);
+              
+              if(!joint_positions.hasNaN()) {
+                  planning_scene->isStateValid(robot_state, req.path_constraints, req.group_name, true);
 
-              // compute the contacts if any
-              collision_detection::CollisionRequest c_req;
-              collision_detection::CollisionResult c_res;
-              c_req.contacts = true;
-              c_req.max_contacts = 10;
-              c_req.max_contacts_per_pair = 3;
-              c_req.verbose = false;
-              planning_scene->checkCollision(c_req, c_res, robot_state);
-              if (c_res.contact_count > 0)
-              {
-                visualization_msgs::msg::MarkerArray arr_i;
-                collision_detection::getCollisionMarkersFromContacts(arr_i, planning_scene->getPlanningFrame(),
-                                                                     c_res.contacts);
-                arr.markers.insert(arr.markers.end(), arr_i.markers.begin(), arr_i.markers.end());
+                  // compute the contacts if any
+                  collision_detection::CollisionRequest c_req;
+                  collision_detection::CollisionResult c_res;
+                  c_req.contacts = true;
+                  c_req.max_contacts = 10;
+                  c_req.max_contacts_per_pair = 3;
+                  c_req.verbose = false;
+                  planning_scene->checkCollision(c_req, c_res, robot_state);
+                  if (c_res.contact_count > 0)
+                  {
+                    visualization_msgs::msg::MarkerArray arr_i;
+                    collision_detection::getCollisionMarkersFromContacts(arr_i, planning_scene->getPlanningFrame(),
+                                                                        c_res.contacts);
+                    arr.markers.insert(arr.markers.end(), arr_i.markers.begin(), arr_i.markers.end());
+                  }
               }
+              else {
+                RCLCPP_WARN(LOGGER, "discarding a waypoint of trajectory for collision checking");
+              }
+
+              
             }
             RCLCPP_ERROR(LOGGER, "Completed listing of explanations for invalid states.");
           }
