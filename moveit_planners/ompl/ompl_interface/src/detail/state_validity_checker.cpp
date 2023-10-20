@@ -115,7 +115,7 @@ bool StateValidityChecker::isValid(const ompl::base::State* state, bool verbose)
   
   //set collision as true by default
   collision_detection::CollisionResult res;
-  res.collision = true;
+  res.collision = false;
 
   if(!joint_positions.hasNaN()) {
     // check collision avoidance
