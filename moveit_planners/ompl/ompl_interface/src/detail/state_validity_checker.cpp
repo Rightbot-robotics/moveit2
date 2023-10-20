@@ -114,11 +114,12 @@ bool StateValidityChecker::isValid(const ompl::base::State* state, bool verbose)
   robot_state->copyJointGroupPositions(planning_context_->getJointModelGroup(), joint_positions);
   
   //set collision as true by default
+  collision_detection::CollisionResult res;
   res.collision = true;
 
   if(!joint_positions.hasNaN()) {
     // check collision avoidance
-    collision_detection::CollisionResult res;
+    
     planning_context_->getPlanningScene()->checkCollision(
         verbose ? collision_request_simple_verbose_ : collision_request_simple_, res, *robot_state);
     if (!res.collision)
