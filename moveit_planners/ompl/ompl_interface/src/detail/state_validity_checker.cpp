@@ -110,18 +110,27 @@ bool StateValidityChecker::isValid(const ompl::base::State* state, bool verbose)
     return false;
   }
 
-  // check collision avoidance
-  collision_detection::CollisionResult res;
-  planning_context_->getPlanningScene()->checkCollision(
-      verbose ? collision_request_simple_verbose_ : collision_request_simple_, res, *robot_state);
-  if (!res.collision)
-  {
-    const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markValid();
+  Eigen::VectorXd joint_positions; 
+  robot_state->copyJointGroupPositions(planning_context_->getJointModelGroup(), joint_positions);
+  
+  //set collision as true by default
+  res.collision = true;
+
+  if(!joint_positions.hasNaN()) {
+    // check collision avoidance
+    collision_detection::CollisionResult res;
+    planning_context_->getPlanningScene()->checkCollision(
+        verbose ? collision_request_simple_verbose_ : collision_request_simple_, res, *robot_state);
+    if (!res.collision)
+    {
+      const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markValid();
+    }
+    else
+    {
+      const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
+    }
   }
-  else
-  {
-    const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
-  }
+  
   return !res.collision;
 }
 
