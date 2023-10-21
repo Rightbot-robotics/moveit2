@@ -2204,13 +2204,25 @@ bool PlanningScene::isPathValid(const robot_trajectory::RobotTrajectory& traject
     const moveit::core::RobotState& st = trajectory.getWayPoint(i);
 
     bool this_state_valid = true;
-    if (isStateColliding(st, group, verbose))
-      this_state_valid = false;
-    if (!isStateFeasible(st, verbose))
-      this_state_valid = false;
-    if (!ks_p.empty() && !ks_p.decide(st, verbose).satisfied)
-      this_state_valid = false;
 
+    Eigen::VectorXd joint_positions;
+    //TODO: change joint model group 
+    st.copyJointGroupPositions(robot_model_->getJointModelGroup("arm"), joint_positions);
+              
+    if(!joint_positions.hasNaN()) { 
+      if (isStateColliding(st, group, verbose))
+      this_state_valid = false;
+      if (!isStateFeasible(st, verbose))
+        this_state_valid = false;
+      if (!ks_p.empty() && !ks_p.decide(st, verbose).satisfied)
+        this_state_valid = false;
+
+    }
+    else {
+      RCLCPP_WARN(LOGGER, "joint pos has NaN values in is path valid check");
+    }
+    
+    
     if (!this_state_valid)
     {
       if (invalid_index)
