@@ -759,7 +759,7 @@ void ompl_interface::ModelBasedPlanningContext::postSolve()
 
   // Debug OMPL setup and solution
   std::stringstream debug_out;
-  ompl_simple_setup_->print(debug_out);
+  //ompl_simple_setup_->print(debug_out);
   RCLCPP_DEBUG(LOGGER, "%s", rclcpp::get_c_string(debug_out.str()));
 }
 
