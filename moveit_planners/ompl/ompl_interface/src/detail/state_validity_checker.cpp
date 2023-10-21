@@ -181,9 +181,17 @@ bool StateValidityChecker::isValid(const ompl::base::State* state, double& dist,
 
   // check collision avoidance
   collision_detection::CollisionResult res;
-  planning_context_->getPlanningScene()->checkCollision(
-      verbose ? collision_request_with_distance_verbose_ : collision_request_with_distance_, res, *robot_state);
-  dist = res.distance;
+  res.collision = false;
+
+  Eigen::VectorXd joint_positions; 
+  robot_state->copyJointGroupPositions(planning_context_->getJointModelGroup(), joint_positions);
+  
+  if(!joint_positions.hasNaN()) {
+
+    planning_context_->getPlanningScene()->checkCollision(
+        verbose ? collision_request_with_distance_verbose_ : collision_request_with_distance_, res, *robot_state);
+    dist = res.distance;
+  }
   return !res.collision;
 }
 
@@ -197,11 +205,18 @@ double StateValidityChecker::cost(const ompl::base::State* state) const
 
   // Calculates cost from a summation of distance to obstacles times the size of the obstacle
   collision_detection::CollisionResult res;
-  planning_context_->getPlanningScene()->checkCollision(collision_request_with_cost_, res, *robot_state);
 
-  for (const collision_detection::CostSource& cost_source : res.cost_sources)
-  {
-    cost += cost_source.cost * cost_source.getVolume();
+  Eigen::VectorXd joint_positions; 
+  robot_state->copyJointGroupPositions(planning_context_->getJointModelGroup(), joint_positions);
+  
+  if(!joint_positions.hasNaN()) {
+
+    planning_context_->getPlanningScene()->checkCollision(collision_request_with_cost_, res, *robot_state);
+
+    for (const collision_detection::CostSource& cost_source : res.cost_sources)
+    {
+      cost += cost_source.cost * cost_source.getVolume();
+    }
   }
 
   return cost;
@@ -214,7 +229,15 @@ double StateValidityChecker::clearance(const ompl::base::State* state) const
   planning_context_->getOMPLStateSpace()->copyToRobotState(*robot_state, state);
 
   collision_detection::CollisionResult res;
-  planning_context_->getPlanningScene()->checkCollision(collision_request_with_distance_, res, *robot_state);
+  res.collision = false;
+
+  Eigen::VectorXd joint_positions; 
+  robot_state->copyJointGroupPositions(planning_context_->getJointModelGroup(), joint_positions);
+  
+  if(!joint_positions.hasNaN()) {
+    planning_context_->getPlanningScene()->checkCollision(collision_request_with_distance_, res, *robot_state);
+  }
+
   return res.collision ? 0.0 : (res.distance < 0.0 ? std::numeric_limits<double>::infinity() : res.distance);
 }
 
@@ -262,15 +285,23 @@ bool ConstrainedPlanningStateValidityChecker::isValid(const ompl::base::State* w
 
   // check collision avoidance
   collision_detection::CollisionResult res;
-  planning_context_->getPlanningScene()->checkCollision(
-      verbose ? collision_request_simple_verbose_ : collision_request_simple_, res, *robot_state);
-  if (!res.collision)
-  {
-    const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markValid();
-  }
-  else
-  {
-    const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
+  res.collision = false;
+
+  Eigen::VectorXd joint_positions; 
+  robot_state->copyJointGroupPositions(planning_context_->getJointModelGroup(), joint_positions);
+  
+  if(!joint_positions.hasNaN()) {
+
+    planning_context_->getPlanningScene()->checkCollision(
+        verbose ? collision_request_simple_verbose_ : collision_request_simple_, res, *robot_state);
+    if (!res.collision)
+    {
+      const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markValid();
+    }
+    else
+    {
+      const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
+    }
   }
   return !res.collision;
 }
@@ -320,9 +351,16 @@ bool ConstrainedPlanningStateValidityChecker::isValid(const ompl::base::State* w
 
   // check collision avoidance
   collision_detection::CollisionResult res;
-  planning_context_->getPlanningScene()->checkCollision(
-      verbose ? collision_request_with_distance_verbose_ : collision_request_with_distance_, res, *robot_state);
-  dist = res.distance;
+  res.collision = false;
+
+  Eigen::VectorXd joint_positions; 
+  robot_state->copyJointGroupPositions(planning_context_->getJointModelGroup(), joint_positions);
+  
+  if(!joint_positions.hasNaN()) {
+    planning_context_->getPlanningScene()->checkCollision(
+        verbose ? collision_request_with_distance_verbose_ : collision_request_with_distance_, res, *robot_state);
+    dist = res.distance;
+  }
   return !res.collision;
 }
 }  // namespace ompl_interface
