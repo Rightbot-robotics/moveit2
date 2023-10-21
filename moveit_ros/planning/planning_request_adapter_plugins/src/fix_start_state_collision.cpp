@@ -84,97 +84,118 @@ public:
     collision_detection::CollisionRequest creq;
     creq.group_name = req.group_name;
     collision_detection::CollisionResult cres;
-    planning_scene->checkCollision(creq, cres, start_state);
-    if (cres.collision)
-    {
-      // Rerun in verbose mode
-      collision_detection::CollisionRequest vcreq = creq;
-      collision_detection::CollisionResult vcres;
-      vcreq.verbose = true;
-      planning_scene->checkCollision(vcreq, vcres, start_state);
+    cres.collision = false;
 
-      if (creq.group_name.empty())
+    Eigen::VectorXd joint_positions; 
+    // TODO: use current planning group instead of a const value
+    const std::string planning_group = "arm";
+    start_state.copyJointGroupPositions(getJointModelGroup(planning_group), joint_positions);
+  
+    if(!joint_positions.hasNaN()) {
+      planning_scene->checkCollision(creq, cres, start_state);
+      if (cres.collision)
       {
-        RCLCPP_INFO(LOGGER, "Start state appears to be in collision");
-      }
-      else
-      {
-        RCLCPP_INFO(LOGGER, "Start state appears to be in collision with respect to group %s", creq.group_name.c_str());
-      }
+        // Rerun in verbose mode
+        collision_detection::CollisionRequest vcreq = creq;
+        collision_detection::CollisionResult vcres;
+        vcreq.verbose = true;
+        planning_scene->checkCollision(vcreq, vcres, start_state);
 
-      auto prefix_state = std::make_shared<moveit::core::RobotState>(start_state);
-      random_numbers::RandomNumberGenerator& rng = prefix_state->getRandomNumberGenerator();
-
-      const std::vector<const moveit::core::JointModel*>& jmodels =
-          planning_scene->getRobotModel()->hasJointModelGroup(req.group_name) ?
-              planning_scene->getRobotModel()->getJointModelGroup(req.group_name)->getJointModels() :
-              planning_scene->getRobotModel()->getJointModels();
-
-      bool found = false;
-      const auto params = param_listener_->get_params();
-
-      for (int c = 0; !found && c < params.max_sampling_attempts; ++c)
-      {
-        for (std::size_t i = 0; !found && i < jmodels.size(); ++i)
+        if (creq.group_name.empty())
         {
-          std::vector<double> sampled_variable_values(jmodels[i]->getVariableCount());
-          const double* original_values = prefix_state->getJointPositions(jmodels[i]);
-          jmodels[i]->getVariableRandomPositionsNearBy(rng, &sampled_variable_values[0], original_values,
-                                                       jmodels[i]->getMaximumExtent() * params.jiggle_fraction);
-          start_state.setJointPositions(jmodels[i], sampled_variable_values);
-          collision_detection::CollisionResult cres;
-          planning_scene->checkCollision(creq, cres, start_state);
-          if (!cres.collision)
+          RCLCPP_INFO(LOGGER, "Start state appears to be in collision");
+        }
+        else
+        {
+          RCLCPP_INFO(LOGGER, "Start state appears to be in collision with respect to group %s", creq.group_name.c_str());
+        }
+
+        auto prefix_state = std::make_shared<moveit::core::RobotState>(start_state);
+        random_numbers::RandomNumberGenerator& rng = prefix_state->getRandomNumberGenerator();
+
+        const std::vector<const moveit::core::JointModel*>& jmodels =
+            planning_scene->getRobotModel()->hasJointModelGroup(req.group_name) ?
+                planning_scene->getRobotModel()->getJointModelGroup(req.group_name)->getJointModels() :
+                planning_scene->getRobotModel()->getJointModels();
+
+        bool found = false;
+        const auto params = param_listener_->get_params();
+
+        for (int c = 0; !found && c < params.max_sampling_attempts; ++c)
+        {
+          for (std::size_t i = 0; !found && i < jmodels.size(); ++i)
           {
-            found = true;
-            RCLCPP_INFO(LOGGER, "Found a valid state near the start state at distance %lf after %d attempts",
-                        prefix_state->distance(start_state), c);
+            std::vector<double> sampled_variable_values(jmodels[i]->getVariableCount());
+            const double* original_values = prefix_state->getJointPositions(jmodels[i]);
+            jmodels[i]->getVariableRandomPositionsNearBy(rng, &sampled_variable_values[0], original_values,
+                                                        jmodels[i]->getMaximumExtent() * params.jiggle_fraction);
+            start_state.setJointPositions(jmodels[i], sampled_variable_values);
+            collision_detection::CollisionResult cres;
+            cres.collision = false;
+
+            Eigen::VectorXd joint_positions; 
+            start_state.copyJointGroupPositions(planning_context_->getJointModelGroup(), joint_positions);
+  
+            if(!joint_positions.hasNaN()) {
+              planning_scene->checkCollision(creq, cres, start_state);
+            }
+            else {
+              RCLCPP_WARN("random pos near start state has NaN values. discarding collision checking");
+            }
+            if (!cres.collision)
+            {
+              found = true;
+              RCLCPP_INFO(LOGGER, "Found a valid state near the start state at distance %lf after %d attempts",
+                          prefix_state->distance(start_state), c);
+            }
           }
         }
-      }
 
-      if (found)
-      {
-        planning_interface::MotionPlanRequest req2 = req;
-        moveit::core::robotStateToRobotStateMsg(start_state, req2.start_state);
-        bool solved = planner(planning_scene, req2, res);
-        if (solved && !res.trajectory->empty())
+        if (found)
         {
-          // heuristically decide a duration offset for the trajectory (induced by the additional point added as a
-          // prefix to the computed trajectory)
-          res.trajectory->setWayPointDurationFromPrevious(0, std::min(params.start_state_max_dt,
-                                                                      res.trajectory->getAverageSegmentDuration()));
-          res.trajectory->addPrefixWayPoint(prefix_state, 0.0);
-          // we add a prefix point, so we need to bump any previously added index positions
-          for (std::size_t& added_index : added_path_index)
-            added_index++;
-          added_path_index.push_back(0);
+          planning_interface::MotionPlanRequest req2 = req;
+          moveit::core::robotStateToRobotStateMsg(start_state, req2.start_state);
+          bool solved = planner(planning_scene, req2, res);
+          if (solved && !res.trajectory->empty())
+          {
+            // heuristically decide a duration offset for the trajectory (induced by the additional point added as a
+            // prefix to the computed trajectory)
+            res.trajectory->setWayPointDurationFromPrevious(0, std::min(params.start_state_max_dt,
+                                                                        res.trajectory->getAverageSegmentDuration()));
+            res.trajectory->addPrefixWayPoint(prefix_state, 0.0);
+            // we add a prefix point, so we need to bump any previously added index positions
+            for (std::size_t& added_index : added_path_index)
+              added_index++;
+            added_path_index.push_back(0);
+          }
+          return solved;
         }
-        return solved;
+        else
+        {
+          RCLCPP_WARN(
+              LOGGER,
+              "Unable to find a valid state nearby the start state (using jiggle fraction of %lf and %lu sampling "
+              "attempts). Passing the original planning request to the planner.",
+              params.jiggle_fraction, params.max_sampling_attempts);
+          res.error_code.val = moveit_msgs::msg::MoveItErrorCodes::START_STATE_IN_COLLISION;
+          return false;  // skip remaining adapters and/or planner
+        }
       }
-      else
-      {
-        RCLCPP_WARN(
-            LOGGER,
-            "Unable to find a valid state nearby the start state (using jiggle fraction of %lf and %lu sampling "
-            "attempts). Passing the original planning request to the planner.",
-            params.jiggle_fraction, params.max_sampling_attempts);
-        res.error_code.val = moveit_msgs::msg::MoveItErrorCodes::START_STATE_IN_COLLISION;
-        return false;  // skip remaining adapters and/or planner
-      }
+      
     }
-    else
-    {
-      if (creq.group_name.empty())
-      {
-        RCLCPP_DEBUG(LOGGER, "Start state is valid");
-      }
-      else
-      {
-        RCLCPP_DEBUG(LOGGER, "Start state is valid with respect to group %s", creq.group_name.c_str());
-      }
-      return planner(planning_scene, req, res);
+    else {
+        RCLCPP_WARN("start state has NaN values, discarding it for collision checking");
+        if (creq.group_name.empty())
+        {
+          RCLCPP_DEBUG(LOGGER, "Start state is valid");
+        }
+        else
+        {
+          RCLCPP_DEBUG(LOGGER, "Start state is valid with respect to group %s", creq.group_name.c_str());
+        }
+        return planner(planning_scene, req, res);
     }
+    
   }
 
 private:
