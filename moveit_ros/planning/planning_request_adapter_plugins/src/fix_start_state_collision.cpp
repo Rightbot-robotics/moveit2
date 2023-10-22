@@ -140,7 +140,7 @@ public:
               planning_scene->checkCollision(creq, cres, start_state);
             }
             else {
-              RCLCPP_WARN(LOGGER, "random pos near start state has NaN values. discarding collision checking");
+              RCLCPP_WARN("random pos near start state has NaN values. discarding collision checking");
             }
             if (!cres.collision)
             {
@@ -184,7 +184,7 @@ public:
       
     }
     else {
-        RCLCPP_WARN(LOGGER, "start state has NaN values, discarding it for collision checking");
+        RCLCPP_WARN("start state has NaN values, discarding it for collision checking");
         if (creq.group_name.empty())
         {
           RCLCPP_DEBUG(LOGGER, "Start state is valid");
