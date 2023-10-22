@@ -78,67 +78,80 @@ public:
     moveit::core::RobotState start_state = planning_scene->getCurrentState();
     moveit::core::robotStateMsgToRobotState(planning_scene->getTransforms(), req.start_state, start_state);
 
-    // if the start state is otherwise valid but does not meet path constraints
-    if (planning_scene->isStateValid(start_state, req.group_name) &&
-        !planning_scene->isStateValid(start_state, req.path_constraints, req.group_name))
-    {
-      RCLCPP_INFO(LOGGER, "Path constraints not satisfied for start state...");
-      planning_scene->isStateValid(start_state, req.path_constraints, req.group_name, true);
-      RCLCPP_INFO(LOGGER, "Planning to path constraints...");
-
-      planning_interface::MotionPlanRequest req2 = req;
-      req2.goal_constraints.resize(1);
-      req2.goal_constraints[0] = req.path_constraints;
-      req2.path_constraints = moveit_msgs::msg::Constraints();
-      planning_interface::MotionPlanResponse res2;
-      // we call the planner for this additional request, but we do not want to include potential
-      // index information from that call
-      std::vector<std::size_t> added_path_index_temp;
-      added_path_index_temp.swap(added_path_index);
-      bool solved1 = planner(planning_scene, req2, res2);
-      added_path_index_temp.swap(added_path_index);
-
-      if (solved1)
+    Eigen::VectorXd joint_positions; 
+    // TODO: use current planning group instead of a const value
+    const std::string planning_group = "arm";
+    start_state.copyJointGroupPositions(start_state.getJointModelGroup(planning_group), joint_positions);
+  
+    if(!joint_positions.hasNaN()) {
+          // if the start state is otherwise valid but does not meet path constraints
+      if (planning_scene->isStateValid(start_state, req.group_name) &&
+          !planning_scene->isStateValid(start_state, req.path_constraints, req.group_name))
       {
-        planning_interface::MotionPlanRequest req3 = req;
-        RCLCPP_INFO(LOGGER, "Planned to path constraints. Resuming original planning request.");
+        RCLCPP_INFO(LOGGER, "Path constraints not satisfied for start state...");
+        planning_scene->isStateValid(start_state, req.path_constraints, req.group_name, true);
+        RCLCPP_INFO(LOGGER, "Planning to path constraints...");
 
-        // extract the last state of the computed motion plan and set it as the new start state
-        moveit::core::robotStateToRobotStateMsg(res2.trajectory->getLastWayPoint(), req3.start_state);
-        bool solved2 = planner(planning_scene, req3, res);
-        res.planning_time += res2.planning_time;
+        planning_interface::MotionPlanRequest req2 = req;
+        req2.goal_constraints.resize(1);
+        req2.goal_constraints[0] = req.path_constraints;
+        req2.path_constraints = moveit_msgs::msg::Constraints();
+        planning_interface::MotionPlanResponse res2;
+        // we call the planner for this additional request, but we do not want to include potential
+        // index information from that call
+        std::vector<std::size_t> added_path_index_temp;
+        added_path_index_temp.swap(added_path_index);
+        bool solved1 = planner(planning_scene, req2, res2);
+        added_path_index_temp.swap(added_path_index);
 
-        if (solved2)
+        if (solved1)
         {
-          // since we add a prefix, we need to correct any existing index positions
-          for (std::size_t& added_index : added_path_index)
-            added_index += res2.trajectory->getWayPointCount();
+          planning_interface::MotionPlanRequest req3 = req;
+          RCLCPP_INFO(LOGGER, "Planned to path constraints. Resuming original planning request.");
 
-          // we mark the fact we insert a prefix path (we specify the index position we just added)
-          for (std::size_t i = 0; i < res2.trajectory->getWayPointCount(); ++i)
-            added_path_index.push_back(i);
+          // extract the last state of the computed motion plan and set it as the new start state
+          moveit::core::robotStateToRobotStateMsg(res2.trajectory->getLastWayPoint(), req3.start_state);
+          bool solved2 = planner(planning_scene, req3, res);
+          res.planning_time += res2.planning_time;
 
-          // we need to append the solution paths.
-          res2.trajectory->append(*res.trajectory, 0.0);
-          res2.trajectory->swap(*res.trajectory);
-          return true;
+          if (solved2)
+          {
+            // since we add a prefix, we need to correct any existing index positions
+            for (std::size_t& added_index : added_path_index)
+              added_index += res2.trajectory->getWayPointCount();
+
+            // we mark the fact we insert a prefix path (we specify the index position we just added)
+            for (std::size_t i = 0; i < res2.trajectory->getWayPointCount(); ++i)
+              added_path_index.push_back(i);
+
+            // we need to append the solution paths.
+            res2.trajectory->append(*res.trajectory, 0.0);
+            res2.trajectory->swap(*res.trajectory);
+            return true;
+          }
+          else
+          {
+            return false;
+          }
         }
         else
         {
-          return false;
+          RCLCPP_WARN(LOGGER, "Unable to plan to path constraints. Running usual motion plan.");
+          res.error_code.val = moveit_msgs::msg::MoveItErrorCodes::START_STATE_VIOLATES_PATH_CONSTRAINTS;
+          res.planning_time = res2.planning_time;
+          return false;  // skip remaining adapters and/or planner
         }
       }
       else
       {
-        RCLCPP_WARN(LOGGER, "Unable to plan to path constraints. Running usual motion plan.");
-        res.error_code.val = moveit_msgs::msg::MoveItErrorCodes::START_STATE_VIOLATES_PATH_CONSTRAINTS;
-        res.planning_time = res2.planning_time;
-        return false;  // skip remaining adapters and/or planner
+        RCLCPP_DEBUG(LOGGER, "Path constraints are OK. Running usual motion plan.");
+        return planner(planning_scene, req, res);
       }
     }
     else
     {
       RCLCPP_DEBUG(LOGGER, "Path constraints are OK. Running usual motion plan.");
+      RCLCPP_WARN(LOGGER, "joint values are NaN. discarding collision check");
       return planner(planning_scene, req, res);
     }
   }
