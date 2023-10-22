@@ -84,7 +84,17 @@ public:
     collision_detection::CollisionRequest creq;
     creq.group_name = req.group_name;
     collision_detection::CollisionResult cres;
-    planning_scene->checkCollision(creq, cres, start_state);
+
+    cres.collision = false;
+    Eigen::VectorXd joint_positions; 
+    // TODO: use current planning group instead of a const value
+    const std::string planning_group = "arm";
+    start_state.copyJointGroupPositions(start_state.getJointModelGroup(planning_group), joint_positions);
+  
+    if(!joint_positions.hasNaN()) {
+      planning_scene->checkCollision(creq, cres, start_state);
+    }
+
     if (cres.collision)
     {
       // Rerun in verbose mode
