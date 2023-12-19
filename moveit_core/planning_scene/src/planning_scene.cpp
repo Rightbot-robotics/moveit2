@@ -2220,6 +2220,7 @@ bool PlanningScene::isPathValid(const robot_trajectory::RobotTrajectory& traject
     }
     else {
       RCLCPP_WARN(LOGGER, "joint pos has NaN values in is path valid check");
+      this_state_valid = false;
     }
     
     
