@@ -37,16 +37,12 @@
 
 #pragma once
 
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <moveit/moveit_cpp/moveit_cpp.h>
-#include <moveit/planning_interface/planning_response.h>
-#include <moveit/planning_pipeline_interfaces/planning_pipeline_interfaces.hpp>
-#include <moveit/planning_pipeline_interfaces/solution_selection_functions.hpp>
-#include <moveit/planning_interface/planning_response.h>
-#include <moveit/robot_state/conversions.h>
-#include <moveit/robot_state/robot_state.h>
-#include <moveit/utils/moveit_error_code.h>
 #include <rclcpp/rclcpp.hpp>
+#include <moveit/moveit_cpp/moveit_cpp.h>
+#include <moveit/robot_state/robot_state.h>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <moveit/robot_state/conversions.h>
+#include <moveit/utils/moveit_error_code.h>
 
 namespace moveit_cpp
 {
@@ -55,6 +51,28 @@ MOVEIT_CLASS_FORWARD(PlanningComponent);  // Defines PlanningComponentPtr, Const
 class PlanningComponent
 {
 public:
+  MOVEIT_STRUCT_FORWARD(PlanSolution);
+
+  using MoveItErrorCode [[deprecated("Use moveit::core::MoveItErrorCode")]] = moveit::core::MoveItErrorCode;
+
+  /// The representation of a plan solution
+  struct PlanSolution
+  {
+    /// The full starting state used for planning
+    moveit_msgs::msg::RobotState start_state;
+
+    /// The trajectory of the robot (may not contain joints that are the same as for the start_state_)
+    robot_trajectory::RobotTrajectoryPtr trajectory;
+
+    /// Reason why the plan failed
+    moveit::core::MoveItErrorCode error_code;
+
+    explicit operator bool() const
+    {
+      return bool(error_code);
+    }
+  };
+
   /// Planner parameters provided with the MotionPlanRequest
   struct PlanRequestParameters
   {
@@ -65,66 +83,16 @@ public:
     double max_velocity_scaling_factor;
     double max_acceleration_scaling_factor;
 
-    template <typename T>
-    void declareOrGetParam(const rclcpp::Node::SharedPtr& node, const std::string& param_name, T& output_value,
-                           T default_value)
+    void load(const rclcpp::Node::SharedPtr& node)
     {
-      // Try to get parameter or use default
-      if (!node->get_parameter_or(param_name, output_value, default_value))
-      {
-        RCLCPP_WARN(node->get_logger(),
-                    "Parameter \'%s\' not found in config use default value instead, check parameter type and "
-                    "namespace in YAML file",
-                    (param_name).c_str());
-      }
-    }
-
-    void load(const rclcpp::Node::SharedPtr& node, const std::string& param_namespace = "")
-    {
-      // Set namespace
       std::string ns = "plan_request_params.";
-      if (!param_namespace.empty())
-      {
-        ns = param_namespace + ".plan_request_params.";
-      }
-
-      // Declare parameters
-      declareOrGetParam<std::string>(node, ns + "planner_id", planner_id, std::string(""));
-      declareOrGetParam<std::string>(node, ns + "planning_pipeline", planning_pipeline, std::string(""));
-      declareOrGetParam<double>(node, ns + "planning_time", planning_time, 1.0);
-      declareOrGetParam<int>(node, ns + "planning_attempts", planning_attempts, 5);
-      declareOrGetParam<double>(node, ns + "max_velocity_scaling_factor", max_velocity_scaling_factor, 1.0);
-      declareOrGetParam<double>(node, ns + "max_acceleration_scaling_factor", max_acceleration_scaling_factor, 1.0);
+      node->get_parameter_or(ns + "planner_id", planner_id, std::string(""));
+      node->get_parameter_or(ns + "planning_pipeline", planning_pipeline, std::string(""));
+      node->get_parameter_or(ns + "planning_time", planning_time, 1.0);
+      node->get_parameter_or(ns + "planning_attempts", planning_attempts, 5);
+      node->get_parameter_or(ns + "max_velocity_scaling_factor", max_velocity_scaling_factor, 1.0);
+      node->get_parameter_or(ns + "max_acceleration_scaling_factor", max_acceleration_scaling_factor, 1.0);
     }
-  };
-
-  /// Planner parameters provided with the MotionPlanRequest
-  struct MultiPipelinePlanRequestParameters
-  {
-    /** Constructor, load MultiPipelinePlanRequestParameters as defined in the node's ROS parameters
-     * \param [in] node Node access the ROS parameters
-     * \param [in] planning_pipeline_names A vector with the names of the pipelines that should be used in parallel
-     */
-    MultiPipelinePlanRequestParameters(const rclcpp::Node::SharedPtr& node,
-                                       const std::vector<std::string>& planning_pipeline_names)
-    {
-      plan_request_parameter_vector.reserve(planning_pipeline_names.size());
-
-      for (const auto& planning_pipeline_name : planning_pipeline_names)
-      {
-        PlanRequestParameters parameters;
-        parameters.load(node, planning_pipeline_name);
-        plan_request_parameter_vector.push_back(parameters);
-      }
-    }
-
-    // Additional constructor to create an empty MultiPipelinePlanRequestParameters instance
-    MultiPipelinePlanRequestParameters()
-    {
-    }
-
-    // Plan request parameters for the individual planning pipelines which run concurrently
-    std::vector<PlanRequestParameters> plan_request_parameter_vector;
   };
 
   /** \brief Constructor */
@@ -186,42 +154,19 @@ public:
   /** \brief Set the path constraints generated from a moveit msg Constraints */
   bool setPathConstraints(const moveit_msgs::msg::Constraints& path_constraints);
 
-  /** \brief Set the trajectory constraints generated from a moveit msg Constraints */
-  bool setTrajectoryConstraints(const moveit_msgs::msg::TrajectoryConstraints& trajectory_constraints);
-
   /** \brief Run a plan from start or current state to fulfill the last goal constraints provided by setGoal() using
    * default parameters. */
-  planning_interface::MotionPlanResponse plan();
+  PlanSolution plan();
   /** \brief Run a plan from start or current state to fulfill the last goal constraints provided by setGoal() using the
    * provided PlanRequestParameters. */
-  planning_interface::MotionPlanResponse plan(const PlanRequestParameters& parameters,
-                                              planning_scene::PlanningScenePtr planning_scene = nullptr);
-
-  /** \brief Run a plan from start or current state to fulfill the last goal constraints provided by setGoal() using the
-   * provided PlanRequestParameters. This defaults to taking the full planning time (null stopping_criterion_callback)
-   * and finding the shortest solution in joint space. */
-  planning_interface::MotionPlanResponse
-  plan(const MultiPipelinePlanRequestParameters& parameters,
-       const moveit::planning_pipeline_interfaces::SolutionSelectionFunction& solution_selection_function =
-           &moveit::planning_pipeline_interfaces::getShortestSolution,
-       const moveit::planning_pipeline_interfaces::StoppingCriterionFunction& stopping_criterion_callback = nullptr,
-       planning_scene::PlanningScenePtr planning_scene = nullptr);
+  PlanSolution plan(const PlanRequestParameters& parameters);
 
   /** \brief Execute the latest computed solution trajectory computed by plan(). By default this function terminates
    * after the execution is complete. The execution can be run in background by setting blocking to false. */
-  [[deprecated("Use MoveItCpp::execute()")]] bool execute(bool /*blocking */)
-  {
-    return false;
-  };
+  bool execute(bool blocking = true);
 
-  /** \brief Utility function to get a MotionPlanRequest from PlanRequestParameters and the internal state of the
-   * PlanningComponent instance */
-  ::planning_interface::MotionPlanRequest getMotionPlanRequest(const PlanRequestParameters& plan_request_parameters);
-
-  /** \brief Utility function to get a Vector of MotionPlanRequest from a vector of PlanRequestParameters and the
-   * internal state of the PlanningComponent instance */
-  std::vector<::planning_interface::MotionPlanRequest>
-  getMotionPlanRequestVector(const MultiPipelinePlanRequestParameters& multi_pipeline_plan_request_parameters);
+  /** \brief Return the last plan solution*/
+  const PlanSolutionPtr getLastPlanSolution();
 
 private:
   // Core properties and instances
@@ -232,13 +177,15 @@ private:
   const moveit::core::JointModelGroup* joint_model_group_;
 
   // Planning
+  std::set<std::string> planning_pipeline_names_;
   // The start state used in the planning motion request
   moveit::core::RobotStatePtr considered_start_state_;
   std::vector<moveit_msgs::msg::Constraints> current_goal_constraints_;
   moveit_msgs::msg::Constraints current_path_constraints_;
-  moveit_msgs::msg::TrajectoryConstraints current_trajectory_constraints_;
+  PlanRequestParameters plan_request_parameters_;
   moveit_msgs::msg::WorkspaceParameters workspace_parameters_;
   bool workspace_parameters_set_ = false;
+  PlanSolutionPtr last_plan_solution_;
 
   // common properties for goals
   // TODO(henningkayser): support goal tolerances
@@ -250,3 +197,12 @@ private:
   // std::unique_ptr<moveit_msgs::msg::TrajectoryConstraints> trajectory_constraints_;
 };
 }  // namespace moveit_cpp
+
+namespace moveit
+{
+namespace planning_interface
+{
+using PlanningComponent [[deprecated("use moveit_cpp")]] = moveit_cpp::PlanningComponent;
+[[deprecated("use moveit_cpp")]] MOVEIT_DECLARE_PTR(PlanningComponent, moveit_cpp::PlanningComponent);
+}  // namespace planning_interface
+}  // namespace moveit

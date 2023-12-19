@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(moveit_ros_perception LANGUAGES CXX)
+project(moveit_ros_perception)
 
 # Common cmake code applied to all moveit packages
 find_package(moveit_common REQUIRED)
@@ -112,14 +112,14 @@ add_subdirectory(semantic_world)
 
 install(
   TARGETS ${THIS_PACKAGE_LIBRARIES}
-  EXPORT moveit_ros_perceptionTargets
+  EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include/moveit_ros_perception
+  INCLUDES DESTINATION include
 )
 
-ament_export_targets(moveit_ros_perceptionTargets HAS_LIBRARY_TARGET)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 pluginlib_export_plugin_description_file(moveit_ros_occupancy_map_monitor "pointcloud_octomap_updater_plugin_description.xml")

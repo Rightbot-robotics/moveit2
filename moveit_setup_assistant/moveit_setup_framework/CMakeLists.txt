@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(moveit_setup_framework LANGUAGES CXX)
+project(moveit_setup_framework)
 
 # Common cmake code applied to all moveit packages
 find_package(moveit_common REQUIRED)
@@ -29,7 +29,7 @@ qt5_wrap_cpp(MOC_FILES
     include/moveit_setup_framework/qt/double_list_widget.hpp
 )
 
-add_library(moveit_setup_framework
+add_library(${PROJECT_NAME}
     src/helper_widgets.cpp
     src/double_list_widget.cpp
     src/urdf_config.cpp
@@ -42,11 +42,11 @@ add_library(moveit_setup_framework
     src/xml_syntax_highlighter.cpp
     ${MOC_FILES}
 )
-target_include_directories(moveit_setup_framework PUBLIC
+target_include_directories(${PROJECT_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include/moveit_setup_framework>
+  $<INSTALL_INTERFACE:include>
 )
-ament_target_dependencies(moveit_setup_framework
+ament_target_dependencies(${PROJECT_NAME}
   ament_index_cpp
   moveit_core
   moveit_ros_planning
@@ -66,23 +66,23 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 install(DIRECTORY include/
-        DESTINATION include/moveit_setup_framework
+        DESTINATION include
 )
 install(FILES moveit_setup_framework_plugins.xml
-        DESTINATION share/moveit_setup_framework
+        DESTINATION share/${PROJECT_NAME}
 )
 
-install(DIRECTORY templates DESTINATION share/moveit_setup_framework)
+install(DIRECTORY templates DESTINATION share/${PROJECT_NAME})
 
-ament_export_targets(moveit_setup_frameworkTargets HAS_LIBRARY_TARGET)
-install(TARGETS moveit_setup_framework
-        EXPORT moveit_setup_frameworkTargets
+ament_export_targets(export_moveit_setup_framework HAS_LIBRARY_TARGET)
+install(TARGETS ${PROJECT_NAME}
+        EXPORT export_moveit_setup_framework
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include/moveit_setup_framework
+        INCLUDES DESTINATION include
 )
-
+ament_export_include_directories(include)
 ament_export_dependencies(rclcpp)
 ament_export_dependencies(Qt5Core)
 ament_export_dependencies(Qt5Widgets)

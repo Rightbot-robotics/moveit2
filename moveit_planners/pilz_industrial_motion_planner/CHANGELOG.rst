@@ -2,89 +2,56 @@
 Changelog for package pilz_industrial_motion_planner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-2.7.4 (2023-05-18)
+2.5.5 (2023-09-10)
 ------------------
-
-2.7.3 (2023-04-24)
-------------------
-* Replace Variable PROJECT_NAME in CMakeLists.txt with the actual name (`#2020 <https://github.com/ros-planning/moveit2/issues/2020>`_)
-* Contributors: Shobuj Paul
-
-2.7.2 (2023-04-18)
-------------------
-* Update pre-commit (`#2094 <https://github.com/ros-planning/moveit2/issues/2094>`_)
-* PILZ: Throw if IK solver doesn't exist (`#2082 <https://github.com/ros-planning/moveit2/issues/2082>`_)
-  * Throw if IK solver doesn't exist
-  * Format
-* Contributors: Sebastian Jahr, Shobuj Paul
-
-2.7.1 (2023-03-23)
-------------------
-* Remove "new" from smart pointer instantiation (`#2019 <https://github.com/ros-planning/moveit2/issues/2019>`_)
-* Fix member naming (`#1949 <https://github.com/ros-planning/moveit2/issues/1949>`_)
-  * Update clang-tidy rules for readability-identifier-naming
+* Pilz multi-group incompatibility (`#1856 <https://github.com/ros-planning/moveit2/issues/1856>`_) (`#2306 <https://github.com/ros-planning/moveit2/issues/2306>`_)
+  (cherry picked from commit 5bbe21b3574d3e3ef2a2c681b3962f70c3db7e78)
+  Co-authored-by: Marco Magri <94347649+MarcoMagriDev@users.noreply.github.com>
   Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
-* remove underscore from public member in MotionPlanResponse (`#1939 <https://github.com/ros-planning/moveit2/issues/1939>`_)
-  * remove underscore from private members
-  * fix more uses of the suffix notation
-* Contributors: AlexWebb, Robert Haschke, Shobuj Paul
-
-2.7.0 (2023-01-29)
-------------------
-* Merge PR `#1712 <https://github.com/ros-planning/moveit2/issues/1712>`_: fix clang compiler warnings + stricter CI
-* converted characters from string format to character format (`#1881 <https://github.com/ros-planning/moveit2/issues/1881>`_)
-* Add default constructors
-  ... as they are not implicitly declared anymore
-* Add default copy/move constructors/assignment operators
-  As a user-declared destructor deletes any implicitly-defined move constructor/assignment operator,
-  we need to declared them manually. This in turn requires to declare the copy constructor/assignment as well.
-* Fix -Wunused-lambda-capture
-* fix: resolve bugs in MoveGroupSequenceAction class (main branch) (`#1797 <https://github.com/ros-planning/moveit2/issues/1797>`_)
+* Fx class_loader warnings in PILZ unittests (`#2296 <https://github.com/ros-planning/moveit2/issues/2296>`_) (`#2303 <https://github.com/ros-planning/moveit2/issues/2303>`_)
+  (cherry picked from commit d4dcea36d9767605fc1921716a67a0c6e9be2a2e)
+  Co-authored-by: Yang Lin <todoubaba@gmail.com>
+* fix: resolve bugs in MoveGroupSequenceAction class (main branch) (`#1797 <https://github.com/ros-planning/moveit2/issues/1797>`_) (`#1809 <https://github.com/ros-planning/moveit2/issues/1809>`_)
   * fix: resolve bugs in MoveGroupSequenceAction class
   * style: adopt .clang-format
   Co-authored-by: Marco Magri <marco.magri@fraunhofer.it>
-* Fix BSD license in package.xml (`#1796 <https://github.com/ros-planning/moveit2/issues/1796>`_)
-  * fix BSD license in package.xml
-  * this must also be spdx compliant
-* Minimize use of `this->` (`#1784 <https://github.com/ros-planning/moveit2/issues/1784>`_)
-  It's often unnecessary. MoveIt already avoids this in most cases
-  so this PR better cements that existing pattern.
-* Add braces around blocks. (`#999 <https://github.com/ros-planning/moveit2/issues/999>`_)
-* Use <> for non-local headers (`#1734 <https://github.com/ros-planning/moveit2/issues/1734>`_)
+  (cherry picked from commit fca8e9bd3f41e6bff5aadbf75c494b5cc3fa25ee)
+  Co-authored-by: Marco Magri <94347649+MarcoMagriDev@users.noreply.github.com>
+* Use <> for non-local headers (`#1765 <https://github.com/ros-planning/moveit2/issues/1765>`_)
   Unless a header lives in the same or a child directory of the file
   including it, it's recommended to use <> for the #include statement.
   For more information, see the C++ Core Guidelines item SF.12
   https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#sf12-prefer-the-quoted-form-of-include-for-files-relative-to-the-including-file-and-the-angle-bracket-form-everywhere-else
-* Cleanup lookup of planning pipelines in MoveItCpp (`#1710 <https://github.com/ros-planning/moveit2/issues/1710>`_)
-  * Revert "Add planner configurations to CHOMP and PILZ (`#1522 <https://github.com/ros-planning/moveit2/issues/1522>`_)"
-  * Cleanup lookup of planning pipelines
-  Remove MoveItCpp::getPlanningPipelineNames(), which was obviously intended initially to provide a planning-group-based filter for all available planning pipelines: A pipeline was discarded for a group, if there were no `planner_configs` defined for that group on the parameter server.
-  As pointed out in `#1522 <https://github.com/ros-planning/moveit2/issues/1522>`_, only OMPL actually explicitly declares planner_configs on the parameter server.
-  To enable all other pipelines as well (and thus circumventing the original filter mechanism), `#1522 <https://github.com/ros-planning/moveit2/issues/1522>`_ introduced empty dummy planner_configs for all other planners as well (CHOMP + Pilz).
-  This, obviously, renders the whole filter mechanism useless. Thus, here we just remove the function getPlanningPipelineNames() and the corresponding member groups_pipelines_map\_.
-* Fix clang-tidy issues (`#1706 <https://github.com/ros-planning/moveit2/issues/1706>`_)
-  * Blindly apply automatic clang-tidy fixes
-  * Exemplarily cleanup a few automatic clang-tidy fixes
-  * Clang-tidy fixups
-  * Missed const-ref fixups
-  * Fix unsupported non-const -> const
-  * More fixes
+  (cherry picked from commit 7a1f2a101f9aeb8557e8a31656bbe1a6d53b430e)
+* Re-enable clang-tidy check `performance-unnecessary-value-param` (backport `#1703 <https://github.com/ros-planning/moveit2/issues/1703>`_)
+  * Re-enable clang-tidy check performance-unnecessary-value-param (`#1703 <https://github.com/ros-planning/moveit2/issues/1703>`_)
+  * Fix clang-tidy issues (`#1706 <https://github.com/ros-planning/moveit2/issues/1706>`_)
   Co-authored-by: Henning Kayser <henningkayser@picknik.ai>
-* Contributors: Chris Thrasher, Christian Henkel, Cory Crean, Marco Magri, Robert Haschke, Sameer Gupta
+  Co-authored-by: Robert Haschke <rhaschke@users.noreply.github.com>
+* Contributors: Chris Thrasher, mergify[bot]
 
-2.6.0 (2022-11-10)
+2.5.4 (2022-11-04)
 ------------------
-* Use generate_parameter_library to load pilz cartesian limit parameters (`#1577 <https://github.com/ros-planning/moveit2/issues/1577>`_)
-* Add joint acceleration validator methods to Pilz limits container (`#1638 <https://github.com/ros-planning/moveit2/issues/1638>`_)
-* Use MoveItConfigsBuilder in Pilz test launch file (`#1571 <https://github.com/ros-planning/moveit2/issues/1571>`_)
-* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_)
-* Add planner configurations to CHOMP and PILZ (`#1522 <https://github.com/ros-planning/moveit2/issues/1522>`_)
-* Use pragma once as header include guard (`#1525 <https://github.com/ros-planning/moveit2/issues/1525>`_)
-* Removed plan_with_sensing (`#1142 <https://github.com/ros-planning/moveit2/issues/1142>`_)
-* Remove __has_include statements (`#1481 <https://github.com/ros-planning/moveit2/issues/1481>`_)
-* Merge https://github.com/ros-planning/moveit/commit/a63580edd05b01d9480c333645036e5b2b222da9
-* Add missing header for std::unique_ptr (`#3180 <https://github.com/ros-planning/moveit2/issues/3180>`_)
-* Contributors: Abishalini Sivaraman, J. Javan, Jochen Sprickerhof, Sebastian Castro, Sebastian Jahr, Stephanie Eng, Vatan Aksoy Tezer, abishalini
+* Backport to Humble (`#1642 <https://github.com/ros-planning/moveit2/issues/1642>`_)
+  Co-authored-by: Robert Haschke <rhaschke@techfak.uni-bielefeld.de>
+  Co-authored-by: Michael Görner <me@v4hn.de>
+  Co-authored-by: Jochen Sprickerhof <git@jochen.sprickerhof.de>
+* Use MoveItConfigsBuilder in Pilz test launch file (`#1571 <https://github.com/ros-planning/moveit2/issues/1571>`_) (`#1662 <https://github.com/ros-planning/moveit2/issues/1662>`_)
+  (cherry picked from commit 5e880bacaad780f511ed99847050216a8b9905c1)
+  Co-authored-by: Abishalini Sivaraman <abi.gpuram@gmail.com>
+* Add planner configurations to CHOMP and PILZ (`#1522 <https://github.com/ros-planning/moveit2/issues/1522>`_) (`#1656 <https://github.com/ros-planning/moveit2/issues/1656>`_)
+  (cherry picked from commit 888fc5358280b20edc394947e98341c0f03dc0bd)
+  Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
+* Use pragma once as header include guard (`#1525 <https://github.com/ros-planning/moveit2/issues/1525>`_) (`#1652 <https://github.com/ros-planning/moveit2/issues/1652>`_)
+  (cherry picked from commit 7d758de1b2f2904b8c85520129fa8d48aad93713)
+  Co-authored-by: J. Javan <J-Javan@users.noreply.github.com>
+* Removed plan_with_sensing (`#1142 <https://github.com/ros-planning/moveit2/issues/1142>`_) (`#1647 <https://github.com/ros-planning/moveit2/issues/1647>`_)
+  (cherry picked from commit ad9fb465776c68d53431ec477ff89d7e4e25f3b3)
+  Co-authored-by: Stephanie Eng <stephanie-eng@users.noreply.github.com>
+* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_) (`#1555 <https://github.com/ros-planning/moveit2/issues/1555>`_)
+  Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
+* Remove __has_include statements (`#1481 <https://github.com/ros-planning/moveit2/issues/1481>`_) (`#1483 <https://github.com/ros-planning/moveit2/issues/1483>`_)
+* Contributors: Tyler Weaver, mergify[bot]
 
 2.5.3 (2022-07-28)
 ------------------

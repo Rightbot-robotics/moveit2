@@ -2,57 +2,28 @@
 Changelog for package chomp_motion_planner
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-2.7.4 (2023-05-18)
+2.5.5 (2023-09-10)
 ------------------
-
-2.7.3 (2023-04-24)
-------------------
-* Replace Variable PROJECT_NAME in CMakeLists.txt with the actual name (`#2020 <https://github.com/ros-planning/moveit2/issues/2020>`_)
-* Contributors: Shobuj Paul
-
-2.7.2 (2023-04-18)
-------------------
-
-2.7.1 (2023-03-23)
-------------------
-* remove underscore from public member in MotionPlanResponse (`#1939 <https://github.com/ros-planning/moveit2/issues/1939>`_)
-  * remove underscore from private members
-  * fix more uses of the suffix notation
-* Contributors: AlexWebb
-
-2.7.0 (2023-01-29)
-------------------
-* Merge https://github.com/ros-planning/moveit/commit/9225971216885490e933ece25390c63ca14f8a58
-* Switch to clang-format-14 (`#1877 <https://github.com/ros-planning/moveit2/issues/1877>`_)
+* Switch to clang-format-14 (`#1877 <https://github.com/ros-planning/moveit2/issues/1877>`_) (`#1880 <https://github.com/ros-planning/moveit2/issues/1880>`_)
   * Switch to clang-format-14
   * Fix clang-format-14
-* Change log level of CHOMP runtime output and change kdl print (`#1818 <https://github.com/ros-planning/moveit2/issues/1818>`_)
-* Fix BSD license in package.xml (`#1796 <https://github.com/ros-planning/moveit2/issues/1796>`_)
-  * fix BSD license in package.xml
-  * this must also be spdx compliant
-* Minimize use of `this->` (`#1784 <https://github.com/ros-planning/moveit2/issues/1784>`_)
-  It's often unnecessary. MoveIt already avoids this in most cases
-  so this PR better cements that existing pattern.
-* Add braces around blocks. (`#999 <https://github.com/ros-planning/moveit2/issues/999>`_)
-* Used C++ style cast instead of C style cast  (`#1628 <https://github.com/ros-planning/moveit2/issues/1628>`_)
+  (cherry picked from commit 7fa5eaf1ac21ab8a99c5adae53bd0a2d4abf98f6)
   Co-authored-by: Henning Kayser <henningkayser@picknik.ai>
-* Use a stronger source of randomness (`#1721 <https://github.com/ros-planning/moveit2/issues/1721>`_)
-  * Remove use of deprecated `std::random_shuffle`
-  * Replace random number generators with `rsl::rng`
-  * Utilize `rsl::uniform_real`
-* Fix segfaults in CHOMP (`#3204 <https://github.com/ros-planning/moveit2/issues/3204>`_)
-  * due to missing description\_
-  * in case of an unspecified input trajectory
-* Contributors: Abhijeet Das Gupta, Abishalini, Chris Thrasher, Christian Henkel, Cory Crean, Henning Kayser, Robert Haschke, Sebastian Jahr
+* Contributors: mergify[bot]
 
-2.6.0 (2022-11-10)
+2.5.4 (2022-11-04)
 ------------------
-* Replace C array with std::array in std::vector template argument to improve compatibility with clang compiler and libc++ (`#1612 <https://github.com/ros-planning/moveit2/issues/1612>`_)
+* updated comment formatting for correct doxygen generation (`#1582 <https://github.com/ros-planning/moveit2/issues/1582>`_) (`#1664 <https://github.com/ros-planning/moveit2/issues/1664>`_)
+  (cherry picked from commit 71e6d903927116a59b9a142ef7b501f4f6cd1022)
+  Co-authored-by: Michael Wrock <michael.wrock@picknik.ai>
+* Replace C array with std::array in std::vector template argument (backport `#1612 <https://github.com/ros-planning/moveit2/issues/1612>`_) (`#1621 <https://github.com/ros-planning/moveit2/issues/1621>`_)
   Co-authored-by: Tyler Weaver <tyler@picknik.ai>
-* updated comment formatting for correct doxygen generation (`#1582 <https://github.com/ros-planning/moveit2/issues/1582>`_)
-* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_)
-* Remove __has_include statements (`#1481 <https://github.com/ros-planning/moveit2/issues/1481>`_)
-* Contributors: Michael Wrock, Sebastian Jahr, Vatan Aksoy Tezer, light-tech
+  (cherry picked from commit a8326ace6bb3e7d17191769533b85ec994a1bdd7)
+  Co-authored-by: light-tech <lightech@outlook.com>
+* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_) (`#1555 <https://github.com/ros-planning/moveit2/issues/1555>`_)
+  Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
+* Remove __has_include statements (`#1481 <https://github.com/ros-planning/moveit2/issues/1481>`_) (`#1483 <https://github.com/ros-planning/moveit2/issues/1483>`_)
+* Contributors: mergify[bot]
 
 2.5.3 (2022-07-28)
 ------------------

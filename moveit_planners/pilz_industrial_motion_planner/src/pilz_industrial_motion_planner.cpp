@@ -40,7 +40,7 @@
 #include <pilz_industrial_motion_planner/planning_context_loader_ptp.h>
 #include <pilz_industrial_motion_planner/planning_exceptions.h>
 
-#include "cartesian_limits_parameters.hpp"
+#include <pilz_industrial_motion_planner/cartesian_limits_aggregator.h>
 #include <pilz_industrial_motion_planner/joint_limits_aggregator.h>
 
 #include <pluginlib/class_list_macros.hpp>
@@ -69,20 +69,19 @@ bool CommandPlanner::initialize(const moveit::core::RobotModelConstPtr& model, c
       node, PARAM_NAMESPACE_LIMITS, model->getActiveJointModels());
 
   // Obtain cartesian limits
-  param_listener_ =
-      std::make_shared<cartesian_limits::ParamListener>(node, PARAM_NAMESPACE_LIMITS + ".cartesian_limits");
-  params_ = param_listener_->get_params();
+  cartesian_limit_ =
+      pilz_industrial_motion_planner::CartesianLimitsAggregator::getAggregatedLimits(node, PARAM_NAMESPACE_LIMITS);
 
   // Load the planning context loader
-  planner_context_loader_ = std::make_unique<pluginlib::ClassLoader<PlanningContextLoader>>(
+  planner_context_loader = std::make_unique<pluginlib::ClassLoader<PlanningContextLoader>>(
       "pilz_industrial_motion_planner", "pilz_industrial_motion_planner::PlanningContextLoader");
 
   // List available plugins
-  const std::vector<std::string>& factories = planner_context_loader_->getDeclaredClasses();
+  const std::vector<std::string>& factories = planner_context_loader->getDeclaredClasses();
   std::stringstream ss;
   for (const auto& factory : factories)
   {
-    ss << factory << ' ';
+    ss << factory << " ";
   }
 
   RCLCPP_INFO_STREAM(LOGGER, "Available plugins: " << ss.str());
@@ -91,17 +90,30 @@ bool CommandPlanner::initialize(const moveit::core::RobotModelConstPtr& model, c
   for (const auto& factory : factories)
   {
     RCLCPP_INFO_STREAM(LOGGER, "About to load: " << factory);
-    PlanningContextLoaderPtr loader_pointer(planner_context_loader_->createSharedInstance(factory));
+    PlanningContextLoaderPtr loader_pointer(planner_context_loader->createSharedInstance(factory));
 
     pilz_industrial_motion_planner::LimitsContainer limits;
     limits.setJointLimits(aggregated_limit_active_joints_);
-    limits.setCartesianLimits(params_);
+    limits.setCartesianLimits(cartesian_limit_);
 
     loader_pointer->setLimits(limits);
     loader_pointer->setModel(model_);
 
     registerContextLoader(loader_pointer);
   }
+
+  // Specify for which joint model groups this planner is usable
+  planning_interface::PlannerConfigurationMap pconfig;
+
+  for (const auto& group : model_->getJointModelGroupNames())
+  {
+    const planning_interface::PlannerConfigurationSettings planner_config_settings{
+      group, group, std::map<std::string, std::string>()
+    };
+    pconfig[planner_config_settings.name] = planner_config_settings;
+  }
+
+  setPlannerConfigurations(pconfig);
 
   return true;
 }
@@ -156,40 +168,7 @@ CommandPlanner::getPlanningContext(const planning_scene::PlanningSceneConstPtr& 
 
 bool CommandPlanner::canServiceRequest(const moveit_msgs::msg::MotionPlanRequest& req) const
 {
-  if (context_loader_map_.find(req.planner_id) == context_loader_map_.end())
-  {
-    RCLCPP_ERROR(LOGGER, "Cannot service planning request because planner ID '%s' does not exist.",
-                 req.planner_id.c_str());
-    return false;
-  }
-
-  if (req.group_name.empty())
-  {
-    RCLCPP_ERROR(LOGGER, "Cannot service planning request because group name is not specified.");
-    return false;
-  }
-
-  auto joint_mode_group_ptr = model_->getJointModelGroup(req.group_name);
-  if (joint_mode_group_ptr == nullptr)
-  {
-    RCLCPP_ERROR(LOGGER, "Cannot service planning request because group '%s' does not exist.", req.group_name.c_str());
-    return false;
-  }
-
-  if (joint_mode_group_ptr->getSolverInstance() == nullptr)
-  {
-    RCLCPP_ERROR(LOGGER, "Cannot service planning request because group '%s' does have an IK solver instance.",
-                 req.group_name.c_str());
-    return false;
-  }
-
-  if (!req.trajectory_constraints.constraints.empty())
-  {
-    RCLCPP_ERROR(LOGGER, "Cannot service planning request because PILZ does not support 'trajectory constraints'.");
-    return false;
-  }
-
-  return true;
+  return context_loader_map_.find(req.planner_id) != context_loader_map_.end();
 }
 
 void CommandPlanner::registerContextLoader(
@@ -199,13 +178,18 @@ void CommandPlanner::registerContextLoader(
   if (context_loader_map_.find(planning_context_loader->getAlgorithm()) == context_loader_map_.end())
   {
     context_loader_map_[planning_context_loader->getAlgorithm()] = planning_context_loader;
-    RCLCPP_INFO_STREAM(LOGGER, "Registered Algorithm [" << planning_context_loader->getAlgorithm() << ']');
+    RCLCPP_INFO_STREAM(LOGGER, "Registered Algorithm [" << planning_context_loader->getAlgorithm() << "]");
   }
   else
   {
     throw ContextLoaderRegistrationException("The command [" + planning_context_loader->getAlgorithm() +
                                              "] is already registered");
   }
+}
+
+void CommandPlanner::setPlannerConfigurations(const planning_interface::PlannerConfigurationMap& pcs)
+{
+  config_settings_ = pcs;
 }
 
 }  // namespace pilz_industrial_motion_planner

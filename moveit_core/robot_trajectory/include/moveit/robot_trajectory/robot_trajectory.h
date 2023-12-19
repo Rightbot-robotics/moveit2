@@ -46,6 +46,7 @@
 
 #include <rcl/error_handling.h>
 #include <rcl/time.h>
+#include <rclcpp/clock.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp/time.hpp>
 #include <rclcpp/utilities.hpp>
@@ -160,13 +161,9 @@ public:
   double getWayPointDurationFromPrevious(std::size_t index) const
   {
     if (duration_from_previous_.size() > index)
-    {
       return duration_from_previous_[index];
-    }
     else
-    {
       return 0.0;
-    }
   }
 
   RobotTrajectory& setWayPointDurationFromPrevious(std::size_t index, double value)
@@ -292,8 +289,6 @@ public:
   RobotTrajectory& reverse();
 
   RobotTrajectory& unwind();
-
-  /** @brief Unwind, starting from an initial state **/
   RobotTrajectory& unwind(const moveit::core::RobotState& state);
 
   /** @brief Finds the waypoint indices before and after a duration from start.
@@ -387,6 +382,7 @@ private:
   const moveit::core::JointModelGroup* group_;
   std::deque<moveit::core::RobotStatePtr> waypoints_;
   std::deque<double> duration_from_previous_;
+  rclcpp::Clock clock_ros_;
 };
 
 /** @brief Operator overload for printing trajectory to a stream */

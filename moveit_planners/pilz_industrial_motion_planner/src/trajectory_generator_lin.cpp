@@ -34,8 +34,6 @@
 
 #include <pilz_industrial_motion_planner/trajectory_generator_lin.h>
 
-#include <pilz_industrial_motion_planner/tip_frame_getter.h>
-
 #include <cassert>
 #include <sstream>
 #include <time.h>
@@ -58,7 +56,11 @@ TrajectoryGeneratorLIN::TrajectoryGeneratorLIN(const moveit::core::RobotModelCon
                                                const LimitsContainer& planner_limits, const std::string& /*group_name*/)
   : TrajectoryGenerator::TrajectoryGenerator(robot_model, planner_limits)
 {
-  planner_limits_.printCartesianLimits();
+  if (!planner_limits_.hasFullCartesianLimits())
+  {
+    RCLCPP_ERROR(LOGGER, "Cartesian limits not set for LIN trajectory generator.");
+    throw TrajectoryGeneratorInvalidLimitsException("Cartesian limits are not fully set for LIN trajectory generator.");
+  }
 }
 
 void TrajectoryGeneratorLIN::extractMotionPlanInfo(const planning_scene::PlanningSceneConstPtr& scene,
@@ -73,7 +75,7 @@ void TrajectoryGeneratorLIN::extractMotionPlanInfo(const planning_scene::Plannin
   // goal given in joint space
   if (!req.goal_constraints.front().joint_constraints.empty())
   {
-    info.link_name = getSolverTipFrame(robot_model_->getJointModelGroup(req.group_name));
+    info.link_name = robot_model_->getJointModelGroup(req.group_name)->getSolverInstance()->getTipFrame();
 
     if (req.goal_constraints.front().joint_constraints.size() !=
         robot_model_->getJointModelGroup(req.group_name)->getActiveJointModelNames().size())
@@ -82,7 +84,7 @@ void TrajectoryGeneratorLIN::extractMotionPlanInfo(const planning_scene::Plannin
       os << "Number of joints in goal does not match number of joints of group "
             "(Number joints goal: "
          << req.goal_constraints.front().joint_constraints.size() << " | Number of joints of group: "
-         << robot_model_->getJointModelGroup(req.group_name)->getActiveJointModelNames().size() << ')';
+         << robot_model_->getJointModelGroup(req.group_name)->getActiveJointModelNames().size() << ")";
       throw JointNumberMismatch(os.str());
     }
 
@@ -181,8 +183,8 @@ std::unique_ptr<KDL::Path> TrajectoryGeneratorLIN::setPathLIN(const Eigen::Affin
   KDL::Frame kdl_start_pose, kdl_goal_pose;
   tf2::transformEigenToKDL(start_pose, kdl_start_pose);
   tf2::transformEigenToKDL(goal_pose, kdl_goal_pose);
-  double eqradius =
-      planner_limits_.getCartesianLimits().max_trans_vel / planner_limits_.getCartesianLimits().max_rot_vel;
+  double eqradius = planner_limits_.getCartesianLimits().getMaxTranslationalVelocity() /
+                    planner_limits_.getCartesianLimits().getMaxRotationalVelocity();
   KDL::RotationalInterpolation* rot_interpo = new KDL::RotationalInterpolation_SingleAxis();
 
   return std::unique_ptr<KDL::Path>(

@@ -49,30 +49,25 @@ constexpr size_t ROS_LOG_THROTTLE_PERIOD = 30 * 1000;  // Milliseconds to thrott
 namespace moveit_servo
 {
 // Constructor for the class that handles collision checking
-CollisionCheck::CollisionCheck(const rclcpp::Node::SharedPtr& node,
-                               const planning_scene_monitor::PlanningSceneMonitorPtr& planning_scene_monitor,
-                               const std::shared_ptr<const servo::ParamListener>& servo_param_listener)
+CollisionCheck::CollisionCheck(const rclcpp::Node::SharedPtr& node, const ServoParameters::SharedConstPtr& parameters,
+                               const planning_scene_monitor::PlanningSceneMonitorPtr& planning_scene_monitor)
   : node_(node)
-  , servo_param_listener_(servo_param_listener)
-  , servo_params_(servo_param_listener_->get_params())
+  , parameters_(parameters)
   , planning_scene_monitor_(planning_scene_monitor)
-  , self_velocity_scale_coefficient_(-log(0.001) / servo_params_.self_collision_proximity_threshold)
-  , scene_velocity_scale_coefficient_(-log(0.001) / servo_params_.scene_collision_proximity_threshold)
-  , period_(1.0 / servo_params_.collision_check_rate)
+  , self_velocity_scale_coefficient_(-log(0.001) / parameters->self_collision_proximity_threshold)
+  , scene_velocity_scale_coefficient_(-log(0.001) / parameters->scene_collision_proximity_threshold)
+  , period_(1. / parameters->collision_check_rate)
 {
   // Init collision request
-  collision_request_.group_name = servo_params_.move_group_name;
+  collision_request_.group_name = parameters_->move_group_name;
   collision_request_.distance = true;  // enable distance-based collision checking
   collision_request_.contacts = true;  // Record the names of collision pairs
 
-  if (servo_params_.collision_check_rate < MIN_RECOMMENDED_COLLISION_RATE)
+  if (parameters_->collision_check_rate < MIN_RECOMMENDED_COLLISION_RATE)
   {
     auto& clk = *node_->get_clock();
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
     RCLCPP_WARN_STREAM_THROTTLE(LOGGER, clk, ROS_LOG_THROTTLE_PERIOD,
                                 "Collision check rate is low, increase it in yaml file if CPU allows");
-#pragma GCC diagnostic pop
   }
 
   // ROS pubs/subs
@@ -92,82 +87,75 @@ void CollisionCheck::start()
   timer_ = node_->create_wall_timer(std::chrono::duration<double>(period_), [this]() { return run(); });
 }
 
-void CollisionCheck::stop()
-{
-  if (timer_)
-  {
-    timer_->cancel();
-  }
-}
-
 void CollisionCheck::run()
 {
-  // Update the latest parameters
-  if (servo_params_.enable_parameter_update)
+  if (paused_)
   {
-    servo_params_ = servo_param_listener_->get_params();
+    return;
   }
 
-  // Only do collision checking if the check_collisions parameter is currently true.
+  // Update to the latest current state
+  current_state_ = planning_scene_monitor_->getStateMonitor()->getCurrentState();
+  current_state_->updateCollisionBodyTransforms();
+  collision_detected_ = false;
+
+  // Do a timer-safe distance-based collision detection
+  collision_result_.clear();
+  getLockedPlanningSceneRO()->getCollisionEnv()->checkRobotCollision(collision_request_, collision_result_,
+                                                                     *current_state_);
+  scene_collision_distance_ = collision_result_.distance;
+  collision_detected_ |= collision_result_.collision;
+  collision_result_.print();
+
+  collision_result_.clear();
+  // Self-collisions and scene collisions are checked separately so different thresholds can be used
+  getLockedPlanningSceneRO()->getCollisionEnvUnpadded()->checkSelfCollision(
+      collision_request_, collision_result_, *current_state_, getLockedPlanningSceneRO()->getAllowedCollisionMatrix());
+  self_collision_distance_ = collision_result_.distance;
+  collision_detected_ |= collision_result_.collision;
+  collision_result_.print();
+
   velocity_scale_ = 1;
-  if (servo_params_.check_collisions)
+  // If we're definitely in collision, stop immediately
+  if (collision_detected_)
   {
-    // Update to the latest current state
-    current_state_ = planning_scene_monitor_->getStateMonitor()->getCurrentState();
-    current_state_->updateCollisionBodyTransforms();
-    collision_detected_ = false;
-
-    // Do a timer-safe distance-based collision detection
-    collision_result_.clear();
-    getLockedPlanningSceneRO()->getCollisionEnv()->checkRobotCollision(collision_request_, collision_result_,
-                                                                       *current_state_);
-    scene_collision_distance_ = collision_result_.distance;
-    collision_detected_ |= collision_result_.collision;
-    collision_result_.print();
-
-    collision_result_.clear();
-    // Self-collisions and scene collisions are checked separately so different thresholds can be used
-    getLockedPlanningSceneRO()->getCollisionEnvUnpadded()->checkSelfCollision(
-        collision_request_, collision_result_, *current_state_, getLockedPlanningSceneRO()->getAllowedCollisionMatrix());
-    self_collision_distance_ = collision_result_.distance;
-    collision_detected_ |= collision_result_.collision;
-    collision_result_.print();
-
-    // If we're definitely in collision, stop immediately
-    if (collision_detected_)
+    velocity_scale_ = 0;
+  }
+  else
+  {
+    // If we are far from a collision, velocity_scale should be 1.
+    // If we are very close to a collision, velocity_scale should be ~zero.
+    // When scene_collision_proximity_threshold is breached, start decelerating exponentially.
+    if (scene_collision_distance_ < parameters_->scene_collision_proximity_threshold)
     {
-      velocity_scale_ = 0;
+      // velocity_scale = e ^ k * (collision_distance - threshold)
+      // k = - ln(0.001) / collision_proximity_threshold
+      // velocity_scale should equal one when collision_distance is at collision_proximity_threshold.
+      // velocity_scale should equal 0.001 when collision_distance is at zero.
+      velocity_scale_ = std::min(velocity_scale_,
+                                 exp(scene_velocity_scale_coefficient_ *
+                                     (scene_collision_distance_ - parameters_->scene_collision_proximity_threshold)));
     }
-    else
-    {
-      // If we are far from a collision, velocity_scale should be 1.
-      // If we are very close to a collision, velocity_scale should be ~zero.
-      // When scene_collision_proximity_threshold is breached, start decelerating exponentially.
-      if (scene_collision_distance_ < servo_params_.scene_collision_proximity_threshold)
-      {
-        // velocity_scale = e ^ k * (collision_distance - threshold)
-        // k = - ln(0.001) / collision_proximity_threshold
-        // velocity_scale should equal one when collision_distance is at collision_proximity_threshold.
-        // velocity_scale should equal 0.001 when collision_distance is at zero.
-        velocity_scale_ = std::min(
-            velocity_scale_, exp(scene_velocity_scale_coefficient_ *
-                                 (scene_collision_distance_ - servo_params_.scene_collision_proximity_threshold)));
-      }
 
-      if (self_collision_distance_ < servo_params_.self_collision_proximity_threshold)
-      {
-        velocity_scale_ = std::min(velocity_scale_,
-                                   exp(self_velocity_scale_coefficient_ *
-                                       (self_collision_distance_ - servo_params_.self_collision_proximity_threshold)));
-      }
+    if (self_collision_distance_ < parameters_->self_collision_proximity_threshold)
+    {
+      velocity_scale_ =
+          std::min(velocity_scale_, exp(self_velocity_scale_coefficient_ *
+                                        (self_collision_distance_ - parameters_->self_collision_proximity_threshold)));
     }
   }
 
-  // Publish collision velocity scaling message.
+  // publish message
   {
     auto msg = std::make_unique<std_msgs::msg::Float64>();
     msg->data = velocity_scale_;
     collision_velocity_scale_pub_->publish(std::move(msg));
   }
 }
+
+void CollisionCheck::setPaused(bool paused)
+{
+  paused_ = paused;
+}
+
 }  // namespace moveit_servo

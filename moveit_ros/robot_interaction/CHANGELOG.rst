@@ -2,59 +2,33 @@
 Changelog for package moveit_ros_robot_interaction
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-2.7.4 (2023-05-18)
+2.5.5 (2023-09-10)
 ------------------
-
-2.7.3 (2023-04-24)
-------------------
-* Replace Variable PROJECT_NAME in CMakeLists.txt with the actual name (`#2020 <https://github.com/ros-planning/moveit2/issues/2020>`_)
-* Contributors: Shobuj Paul
-
-2.7.2 (2023-04-18)
-------------------
-
-2.7.1 (2023-03-23)
-------------------
-* Fix member naming (`#1949 <https://github.com/ros-planning/moveit2/issues/1949>`_)
-  * Update clang-tidy rules for readability-identifier-naming
-  Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
-* Contributors: Robert Haschke
-
-2.7.0 (2023-01-29)
-------------------
-* Fix BSD license in package.xml (`#1796 <https://github.com/ros-planning/moveit2/issues/1796>`_)
-  * fix BSD license in package.xml
-  * this must also be spdx compliant
-* Minimize use of `this->` (`#1784 <https://github.com/ros-planning/moveit2/issues/1784>`_)
-  It's often unnecessary. MoveIt already avoids this in most cases
-  so this PR better cements that existing pattern.
-* Remove `MOVEIT_LIB_NAME` (`#1751 <https://github.com/ros-planning/moveit2/issues/1751>`_)
-  It's more readable and searchable if we just spell out the target
-  name.
-* Add braces around blocks. (`#999 <https://github.com/ros-planning/moveit2/issues/999>`_)
-* Use <> for non-local headers (`#1734 <https://github.com/ros-planning/moveit2/issues/1734>`_)
+* Replaced numbers with SystemDefaultsQos() (`#2271 <https://github.com/ros-planning/moveit2/issues/2271>`_) (`#2277 <https://github.com/ros-planning/moveit2/issues/2277>`_)
+  (cherry picked from commit 5506dd516a91bc145e462b493668ef8623d43521)
+  Co-authored-by: Shobuj Paul <72087882+Shobuj-Paul@users.noreply.github.com>
+* Use <> for non-local headers (`#1765 <https://github.com/ros-planning/moveit2/issues/1765>`_)
   Unless a header lives in the same or a child directory of the file
   including it, it's recommended to use <> for the #include statement.
   For more information, see the C++ Core Guidelines item SF.12
   https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines#sf12-prefer-the-quoted-form-of-include-for-files-relative-to-the-including-file-and-the-angle-bracket-form-everywhere-else
-* Fix clang-tidy issues (`#1706 <https://github.com/ros-planning/moveit2/issues/1706>`_)
-  * Blindly apply automatic clang-tidy fixes
-  * Exemplarily cleanup a few automatic clang-tidy fixes
-  * Clang-tidy fixups
-  * Missed const-ref fixups
-  * Fix unsupported non-const -> const
-  * More fixes
+  (cherry picked from commit 7a1f2a101f9aeb8557e8a31656bbe1a6d53b430e)
+* Re-enable clang-tidy check `performance-unnecessary-value-param` (backport `#1703 <https://github.com/ros-planning/moveit2/issues/1703>`_)
+  * Re-enable clang-tidy check performance-unnecessary-value-param (`#1703 <https://github.com/ros-planning/moveit2/issues/1703>`_)
+  * Fix clang-tidy issues (`#1706 <https://github.com/ros-planning/moveit2/issues/1706>`_)
   Co-authored-by: Henning Kayser <henningkayser@picknik.ai>
-* Contributors: Chris Thrasher, Christian Henkel, Cory Crean, Robert Haschke
+  Co-authored-by: Robert Haschke <rhaschke@users.noreply.github.com>
+* Contributors: Chris Thrasher, mergify[bot]
 
-2.6.0 (2022-11-10)
+2.5.4 (2022-11-04)
 ------------------
-* Add moveit_core dependency to robot_interaction (`#1617 <https://github.com/ros-planning/moveit2/issues/1617>`_)
-* Merge PR `#1553 <https://github.com/ros-planning/moveit2/issues/1553>`_: Improve cmake files
-* Use standard exported targets: export\_${PROJECT_NAME} -> ${PROJECT_NAME}Targets
-* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_)
-* Remove __has_include statements (`#1481 <https://github.com/ros-planning/moveit2/issues/1481>`_)
-* Contributors: Robert Haschke, Sebastian Castro, Sebastian Jahr, Vatan Aksoy Tezer
+* Add moveit_core dependency to robot_interaction (`#1617 <https://github.com/ros-planning/moveit2/issues/1617>`_) (`#1618 <https://github.com/ros-planning/moveit2/issues/1618>`_)
+  (cherry picked from commit cc63903a11652eae3829f7e1dcc1d74e73c50839)
+  Co-authored-by: Sebastian Castro <4603398+sea-bass@users.noreply.github.com>
+* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_) (`#1555 <https://github.com/ros-planning/moveit2/issues/1555>`_)
+  Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
+* Remove __has_include statements (`#1481 <https://github.com/ros-planning/moveit2/issues/1481>`_) (`#1483 <https://github.com/ros-planning/moveit2/issues/1483>`_)
+* Contributors: mergify[bot]
 
 2.5.3 (2022-07-28)
 ------------------

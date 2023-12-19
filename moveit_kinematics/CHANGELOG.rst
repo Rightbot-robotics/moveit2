@@ -2,88 +2,49 @@
 Changelog for package moveit_kinematics
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-2.7.4 (2023-05-18)
+2.5.5 (2023-09-10)
 ------------------
-
-2.7.3 (2023-04-24)
-------------------
-
-2.7.2 (2023-04-18)
-------------------
-* Fix moveit_kinematics dependency on moveit_ros_planning (`#2109 <https://github.com/ros-planning/moveit2/issues/2109>`_)
-  This dependency is unconditionally used even if tests are disabled.
-* Update pre-commit (`#2094 <https://github.com/ros-planning/moveit2/issues/2094>`_)
-* Readability: kinematic_state -> robot_state (`#2078 <https://github.com/ros-planning/moveit2/issues/2078>`_)
-* Contributors: Scott K Logan, Sebastian Jahr, Shobuj Paul
-
-2.7.1 (2023-03-23)
-------------------
-* Fix member naming (`#1949 <https://github.com/ros-planning/moveit2/issues/1949>`_)
-  * Update clang-tidy rules for readability-identifier-naming
-  Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
-* Add ament export (`#1887 <https://github.com/ros-planning/moveit2/issues/1887>`_)
-  * Add ament export
-  Also sort `find_package` entries alphabetically.
-  * Minor cleanup
-  ---------
-  Co-authored-by: AndyZe <andyz@utexas.edu>
-* Contributors: Gaël Écorchard, Robert Haschke
-
-2.7.0 (2023-01-29)
-------------------
-* Merge PR `#1712 <https://github.com/ros-planning/moveit2/issues/1712>`_: fix clang compiler warnings + stricter CI
-* converted characters from string format to character format (`#1881 <https://github.com/ros-planning/moveit2/issues/1881>`_)
-* Add noexcept specifier to constructors
-* Add default copy/move constructors/assignment operators
+* Fix ikfast package template (`#2195 <https://github.com/ros-planning/moveit2/issues/2195>`_) (`#2199 <https://github.com/ros-planning/moveit2/issues/2199>`_)
+  (cherry picked from commit 21036b58e99876928b46e3cc4603a9eb9b85e11d)
+  Co-authored-by: Jafar <cafer.abdi@gmail.com>
+* Fix clang compiler warnings (backport of `#1712 <https://github.com/ros-planning/moveit2/issues/1712>`_) (`#1896 <https://github.com/ros-planning/moveit2/issues/1896>`_)
+  - Fix warning: definition of implicit copy assignment operator is deprecated
+  - Fix warning: expression with side effects will be evaluated
+  - Fix warning: passing by value
+  - Enable -Werror
+  - Fix -Wdelete-non-abstract-non-virtual-dtor
+  - Fix more clang warnings
+  - Modernize gtest: TYPED_TEST_CASE -> TYPED_TEST_SUITE
+  - Fix GoogleTestVerification.UninstantiatedTypeParameterizedTestSuite
+  - Add default copy/move constructors/assignment operators
   As a user-declared destructor deletes any implicitly-defined move constructor/assignment operator,
   we need to declared them manually. This in turn requires to declare the copy constructor/assignment as well.
-* Fix IKFAST_TEST (`#1850 <https://github.com/ros-planning/moveit2/issues/1850>`_)
-* Change log level of CHOMP runtime output and change kdl print (`#1818 <https://github.com/ros-planning/moveit2/issues/1818>`_)
-* Fix BSD license in package.xml (`#1796 <https://github.com/ros-planning/moveit2/issues/1796>`_)
-  * fix BSD license in package.xml
-  * this must also be spdx compliant
-* Minimize use of `this->` (`#1784 <https://github.com/ros-planning/moveit2/issues/1784>`_)
-  It's often unnecessary. MoveIt already avoids this in most cases
-  so this PR better cements that existing pattern.
-* Enable `-Wold-style-cast` (`#1770 <https://github.com/ros-planning/moveit2/issues/1770>`_)
-* Remove `MOVEIT_LIB_NAME` (`#1751 <https://github.com/ros-planning/moveit2/issues/1751>`_)
-  It's more readable and searchable if we just spell out the target
-  name.
-* Add braces around blocks. (`#999 <https://github.com/ros-planning/moveit2/issues/999>`_)
-* Used C++ style cast instead of C style cast  (`#1628 <https://github.com/ros-planning/moveit2/issues/1628>`_)
-  Co-authored-by: Henning Kayser <henningkayser@picknik.ai>
-* Use a stronger source of randomness (`#1721 <https://github.com/ros-planning/moveit2/issues/1721>`_)
-  * Remove use of deprecated `std::random_shuffle`
-  * Replace random number generators with `rsl::rng`
-  * Utilize `rsl::uniform_real`
-* Contributors: Abhijeet Das Gupta, Chris Thrasher, Christian Henkel, Cory Crean, Robert Haschke, Sameer Gupta, Sebastian Jahr
+  - Explicitly declare overrides
+  - Add default constructors as they are not implicitly declared anymore
+  - Declare selected classes as final
+  - Add noexcept specifier to constructors
+  - Fixup gmock/gtest warnings
+* Contributors: Robert Haschke, mergify[bot]
 
-2.6.0 (2022-11-10)
+2.5.4 (2022-11-04)
 ------------------
-* Use generate_parameter_library to load KDL kinematics parameters (`#1671 <https://github.com/ros-planning/moveit2/issues/1671>`_)
-* Use generate_parameter_library to load ikfast kinematics parameters (`#1675 <https://github.com/ros-planning/moveit2/issues/1675>`_)
-* Use generate_parameter_library to load cached IK kinematics parameters (`#1677 <https://github.com/ros-planning/moveit2/issues/1677>`_)
-* Use generate_parameter_library to load srv kinematics parameters (`#1674 <https://github.com/ros-planning/moveit2/issues/1674>`_)
-* Use generate_parameter_library to load LMA kinematics parameters (`#1673 <https://github.com/ros-planning/moveit2/issues/1673>`_)
-* Merge PR `#1553 <https://github.com/ros-planning/moveit2/issues/1553>`_: Improve cmake files
-* Use standard exported targets: export\_${PROJECT_NAME} -> ${PROJECT_NAME}Targets
-* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_)
-* Use pragma once as header include guard (`#1525 <https://github.com/ros-planning/moveit2/issues/1525>`_)
-* Unified code comment style (`#1053 <https://github.com/ros-planning/moveit2/issues/1053>`_)
+* Backport to Humble (`#1642 <https://github.com/ros-planning/moveit2/issues/1642>`_)
+  Co-authored-by: Robert Haschke <rhaschke@techfak.uni-bielefeld.de>
+  Co-authored-by: Michael Görner <me@v4hn.de>
+  Co-authored-by: Jochen Sprickerhof <git@jochen.sprickerhof.de>
+* Use pragma once as header include guard (`#1525 <https://github.com/ros-planning/moveit2/issues/1525>`_) (`#1652 <https://github.com/ros-planning/moveit2/issues/1652>`_)
+  (cherry picked from commit 7d758de1b2f2904b8c85520129fa8d48aad93713)
+  Co-authored-by: J. Javan <J-Javan@users.noreply.github.com>
+* Unified code comment style (`#1053 <https://github.com/ros-planning/moveit2/issues/1053>`_) (`#1648 <https://github.com/ros-planning/moveit2/issues/1648>`_)
   * Changes the comment style from /**/ to //
   Co-authored-by: JafarAbdi <cafer.abdi@gmail.com>
   Co-authored-by: Henning Kayser <henningkayser@picknik.ai>
-* Remove __has_include statements (`#1481 <https://github.com/ros-planning/moveit2/issues/1481>`_)
-* Merge https://github.com/ros-planning/moveit/commit/a63580edd05b01d9480c333645036e5b2b222da9
-* Merge PR `#3172 <https://github.com/ros-planning/moveit2/issues/3172>`_: Fix CI
-* Fix test_ikfast_plugins.sh
-  - Create panda.urdf using catkin build panda_description
-  - Improve debug output
-* Fix run_quiet()
-  - Show output on error
-  - Restore both stdout and stderr
-* auto_create_ikfast_moveit_plugin.sh: allow xacro input
-* Contributors: Abishalini Sivaraman, J. Javan, Michael Marron, Robert Haschke, Sebastian Jahr, Vatan Aksoy Tezer, abishalini
+  (cherry picked from commit 1d67b519e6ef9ca1ebba494743791da998b72950)
+  Co-authored-by: Michael Marron <62182318+michael-marron@users.noreply.github.com>
+* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_) (`#1555 <https://github.com/ros-planning/moveit2/issues/1555>`_)
+  Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
+* Remove __has_include statements (`#1481 <https://github.com/ros-planning/moveit2/issues/1481>`_) (`#1483 <https://github.com/ros-planning/moveit2/issues/1483>`_)
+* Contributors: Tyler Weaver, mergify[bot]
 
 2.5.3 (2022-07-28)
 ------------------

@@ -42,8 +42,7 @@
 
 #include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/robot_state/conversions.h>
-
-#include "cartesian_limits_parameters.hpp"
+#include <pilz_industrial_motion_planner/cartesian_limits_aggregator.h>
 #include <pilz_industrial_motion_planner/joint_limits_aggregator.h>
 #include <pilz_industrial_motion_planner/tip_frame_getter.h>
 #include <pilz_industrial_motion_planner/trajectory_blend_request.h>
@@ -64,13 +63,13 @@ CommandListManager::CommandListManager(const rclcpp::Node::SharedPtr& node,
   aggregated_limit_active_joints = pilz_industrial_motion_planner::JointLimitsAggregator::getAggregatedLimits(
       node_, PARAM_NAMESPACE_LIMITS, model_->getActiveJointModels());
 
-  param_listener_ =
-      std::make_shared<cartesian_limits::ParamListener>(node, PARAM_NAMESPACE_LIMITS + ".cartesian_limits");
-  params_ = param_listener_->get_params();
+  // Obtain cartesian limits
+  pilz_industrial_motion_planner::CartesianLimit cartesian_limit =
+      pilz_industrial_motion_planner::CartesianLimitsAggregator::getAggregatedLimits(node_, PARAM_NAMESPACE_LIMITS);
 
   pilz_industrial_motion_planner::LimitsContainer limits;
   limits.setJointLimits(aggregated_limit_active_joints);
-  limits.setCartesianLimits(params_);
+  limits.setCartesianLimits(cartesian_limit);
 
   plan_comp_builder_.setModel(model);
   plan_comp_builder_.setBlender(std::unique_ptr<pilz_industrial_motion_planner::TrajectoryBlender>(
@@ -99,7 +98,7 @@ RobotTrajCont CommandListManager::solve(const planning_scene::PlanningSceneConst
   plan_comp_builder_.reset();
   for (MotionResponseCont::size_type i = 0; i < resp_cont.size(); ++i)
   {
-    plan_comp_builder_.append(planning_scene, resp_cont.at(i).trajectory,
+    plan_comp_builder_.append(planning_scene, resp_cont.at(i).trajectory_,
                               // The blend radii has to be "attached" to
                               // the second part of a blend trajectory,
                               // therefore: "i-1".
@@ -144,7 +143,7 @@ void CommandListManager::checkForOverlappingRadii(const MotionResponseCont& resp
 
   for (MotionResponseCont::size_type i = 0; i < resp_cont.size() - 2; ++i)
   {
-    if (checkRadiiForOverlap(*(resp_cont.at(i).trajectory), radii.at(i), *(resp_cont.at(i + 1).trajectory),
+    if (checkRadiiForOverlap(*(resp_cont.at(i).trajectory_), radii.at(i), *(resp_cont.at(i + 1).trajectory_),
                              radii.at(i + 1)))
     {
       std::ostringstream os;
@@ -160,9 +159,9 @@ CommandListManager::getPreviousEndState(const MotionResponseCont& motion_plan_re
   for (MotionResponseCont::const_reverse_iterator it = motion_plan_responses.crbegin();
        it != motion_plan_responses.crend(); ++it)
   {
-    if (it->trajectory->getGroupName() == group_name)
+    if (it->trajectory_->getGroupName() == group_name)
     {
-      return std::reference_wrapper(it->trajectory->getLastWayPoint());
+      return std::reference_wrapper(it->trajectory_->getLastWayPoint());
     }
   }
   return {};
@@ -240,14 +239,14 @@ CommandListManager::solveSequenceItems(const planning_scene::PlanningSceneConstP
 
     planning_interface::MotionPlanResponse res;
     planning_pipeline->generatePlan(planning_scene, req, res);
-    if (res.error_code.val != res.error_code.SUCCESS)
+    if (res.error_code_.val != res.error_code_.SUCCESS)
     {
       std::ostringstream os;
       os << "Could not solve request\n";  // TODO(henning): re-enable "---\n" << req << "\n---\n";
-      throw PlanningPipelineException(os.str(), res.error_code.val);
+      throw PlanningPipelineException(os.str(), res.error_code_.val);
     }
     motion_plan_responses.emplace_back(res);
-    RCLCPP_DEBUG_STREAM(LOGGER, "Solved [" << ++curr_req_index << '/' << num_req << ']');
+    RCLCPP_DEBUG_STREAM(LOGGER, "Solved [" << ++curr_req_index << "/" << num_req << "]");
   }
   return motion_plan_responses;
 }

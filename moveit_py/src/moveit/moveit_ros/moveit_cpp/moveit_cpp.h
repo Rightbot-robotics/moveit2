@@ -1,7 +1,7 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
  *
- *  Copyright (c) 2022, Peter David Fagan
+ *  Copyright (c) 2018 Pilz GmbH & Co. KG
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -14,7 +14,7 @@
  *     copyright notice, this list of conditions and the following
  *     disclaimer in the documentation and/or other materials provided
  *     with the distribution.
- *   * Neither the name of PickNik Inc. nor the names of its
+ *   * Neither the name of Pilz GmbH & Co. KG nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
  *
@@ -32,29 +32,36 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/* Author: Peter David Fagan */
-
 #pragma once
 
-#include <pybind11/pybind11.h>
-#include <pybind11/numpy.h>
-#include <pybind11/eigen.h>
-#include <pybind11/stl.h>
-#include <moveit_msgs/msg/robot_state.h>
-#include <moveit_msgs/msg/move_it_error_codes.h>
-#include <moveit_py/moveit_py_utils/ros_msg_typecasters.h>
-#include <moveit/moveit_cpp/moveit_cpp.h>
-#include <moveit/moveit_cpp/planning_component.h>
 #include <rclcpp/rclcpp.hpp>
+#include <pilz_industrial_motion_planner/cartesian_limit.h>
 
-#include "planning_component.h"
-
-namespace py = pybind11;
-
-namespace moveit_py
+namespace pilz_industrial_motion_planner
 {
-namespace bind_moveit_cpp
+/**
+ * @brief Obtains cartesian limits from the node parameters
+ */
+class CartesianLimitsAggregator
 {
-void init_moveit_py(py::module& m);
-}  // namespace bind_moveit_cpp
-}  // namespace moveit_py
+public:
+  /**
+   * @brief Loads cartesian limits from the node parameters
+   *
+   * The parameters are expected to be under "~/cartesian_limits" of the given
+   * node handle.
+   * The following limits can be specified:
+   * - "max_trans_vel", the maximum translational velocity [m/s]
+   * - "max_trans_acc, the maximum translational acceleration [m/s^2]
+   * - "max_trans_dec", the maximum translational deceleration (<= 0) [m/s^2]
+   * - "max_rot_vel", the maximum rotational velocity [rad/s]
+   * - "max_rot_acc", the maximum rotational acceleration [rad/s^2]
+   * - "max_rot_dec", the maximum rotational deceleration (<= 0)[rad/s^2]
+   * @param node node to access the parameters
+   * @param param_namespace the parameter name to access the parameters
+   * @return the obtained cartesian limits
+   */
+  static CartesianLimit getAggregatedLimits(const rclcpp::Node::SharedPtr& node, const std::string& param_namespace);
+};
+
+}  // namespace pilz_industrial_motion_planner

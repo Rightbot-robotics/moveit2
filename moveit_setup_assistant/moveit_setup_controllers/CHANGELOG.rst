@@ -2,66 +2,45 @@
 Changelog for package moveit_setup_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-2.7.4 (2023-05-18)
+2.5.5 (2023-09-10)
 ------------------
-
-2.7.3 (2023-04-24)
-------------------
-* Replace Variable PROJECT_NAME in CMakeLists.txt with the actual name (`#2020 <https://github.com/ros-planning/moveit2/issues/2020>`_)
-* Contributors: Shobuj Paul
-
-2.7.2 (2023-04-18)
-------------------
-* Update pre-commit (`#2094 <https://github.com/ros-planning/moveit2/issues/2094>`_)
-* Contributors: Shobuj Paul
-
-2.7.1 (2023-03-23)
-------------------
-* add missing dependencies on config utils (`#1962 <https://github.com/ros-planning/moveit2/issues/1962>`_)
+* add missing dependencies on config utils (backport `#1962 <https://github.com/ros-planning/moveit2/issues/1962>`_) (`#2206 <https://github.com/ros-planning/moveit2/issues/2206>`_)
   when installing ros-humble-moveit-setup-assistant from debs,
   the package cannot currently run due to this missing depend
-* Contributors: Michael Ferguson
-
-2.7.0 (2023-01-29)
-------------------
-* Merge PR `#1712 <https://github.com/ros-planning/moveit2/issues/1712>`_: fix clang compiler warnings + stricter CI
-* Add default constructors
-  ... as they are not implicitly declared anymore
-* Add default copy/move constructors/assignment operators
+  (cherry picked from commit cc635471aadfb9446398ece319ae31c6b72bec86)
+  Co-authored-by: Michael Ferguson <mfergs7@gmail.com>
+* Fix clang compiler warnings (backport of `#1712 <https://github.com/ros-planning/moveit2/issues/1712>`_) (`#1896 <https://github.com/ros-planning/moveit2/issues/1896>`_)
+  - Fix warning: definition of implicit copy assignment operator is deprecated
+  - Fix warning: expression with side effects will be evaluated
+  - Fix warning: passing by value
+  - Enable -Werror
+  - Fix -Wdelete-non-abstract-non-virtual-dtor
+  - Fix more clang warnings
+  - Modernize gtest: TYPED_TEST_CASE -> TYPED_TEST_SUITE
+  - Fix GoogleTestVerification.UninstantiatedTypeParameterizedTestSuite
+  - Add default copy/move constructors/assignment operators
   As a user-declared destructor deletes any implicitly-defined move constructor/assignment operator,
   we need to declared them manually. This in turn requires to declare the copy constructor/assignment as well.
-* Fix -Wdelete-non-abstract-non-virtual-dtor
-* Fix BSD license in package.xml (`#1796 <https://github.com/ros-planning/moveit2/issues/1796>`_)
-  * fix BSD license in package.xml
-  * this must also be spdx compliant
-* Minimize use of `this->` (`#1784 <https://github.com/ros-planning/moveit2/issues/1784>`_)
-  It's often unnecessary. MoveIt already avoids this in most cases
-  so this PR better cements that existing pattern.
-* Add braces around blocks. (`#999 <https://github.com/ros-planning/moveit2/issues/999>`_)
-* Fix clang-tidy issues (`#1706 <https://github.com/ros-planning/moveit2/issues/1706>`_)
-  * Blindly apply automatic clang-tidy fixes
-  * Exemplarily cleanup a few automatic clang-tidy fixes
-  * Clang-tidy fixups
-  * Missed const-ref fixups
-  * Fix unsupported non-const -> const
-  * More fixes
+  - Explicitly declare overrides
+  - Add default constructors as they are not implicitly declared anymore
+  - Declare selected classes as final
+  - Add noexcept specifier to constructors
+  - Fixup gmock/gtest warnings
+* Re-enable clang-tidy check `performance-unnecessary-value-param` (backport `#1703 <https://github.com/ros-planning/moveit2/issues/1703>`_)
+  * Re-enable clang-tidy check performance-unnecessary-value-param (`#1703 <https://github.com/ros-planning/moveit2/issues/1703>`_)
+  * Fix clang-tidy issues (`#1706 <https://github.com/ros-planning/moveit2/issues/1706>`_)
   Co-authored-by: Henning Kayser <henningkayser@picknik.ai>
-* Contributors: Chris Thrasher, Christian Henkel, Cory Crean, Robert Haschke
+  Co-authored-by: Robert Haschke <rhaschke@users.noreply.github.com>
+* Contributors: Robert Haschke, mergify[bot]
 
-2.6.0 (2022-11-10)
+2.5.4 (2022-11-04)
 ------------------
-* Merge PR `#1553 <https://github.com/ros-planning/moveit2/issues/1553>`_: Improve cmake files
-* Cleanup cmake files
-  - Replace ament_export_libraries() -> ament_export_targets(HAS_LIBRARY_TARGET)
-  - Replace ament_export_include_directories() -> INCLUDES DESTINATION include
-  See https://docs.ros.org/en/foxy/How-To-Guides/Ament-CMake-Documentation.html#building-a-library
-* Use standard exported targets: export\_${PROJECT_NAME} -> ${PROJECT_NAME}Targets
-* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_)
-* MSA: write the default controller namespace (`#1515 <https://github.com/ros-planning/moveit2/issues/1515>`_)
-  * Write the default controller namespace
-  * Check for a sane controller type
-  * Revert the check for FollowJointTrajectory type
-* Contributors: AndyZe, Robert Haschke, Sebastian Jahr
+* MSA: write the default controller namespace (`#1515 <https://github.com/ros-planning/moveit2/issues/1515>`_) (`#1651 <https://github.com/ros-planning/moveit2/issues/1651>`_)
+  (cherry picked from commit 066e8621166858d3f556726197b07643a1b685f9)
+  Co-authored-by: AndyZe <zelenak@picknik.ai>
+* Improve CMake usage (`#1550 <https://github.com/ros-planning/moveit2/issues/1550>`_) (`#1555 <https://github.com/ros-planning/moveit2/issues/1555>`_)
+  Co-authored-by: Sebastian Jahr <sebastian.jahr@picknik.ai>
+* Contributors: mergify[bot]
 
 2.5.3 (2022-07-28)
 ------------------

@@ -8,7 +8,7 @@ on:
   pull_request:
   push:
     branches:
-      - main
+      - humble
 
 jobs:
   default:
@@ -16,17 +16,17 @@ jobs:
       fail-fast: false
       matrix:
         env:
-          - IMAGE: rolling-ci
-            CCOV: true
-            ROS_DISTRO: rolling
-          - IMAGE: rolling-ci-testing
-            ROS_DISTRO: rolling
-            IKFAST_TEST: true
-            CLANG_TIDY: pedantic
           - IMAGE: humble-ci
+            CCOV: true
             ROS_DISTRO: humble
           - IMAGE: humble-ci-testing
             ROS_DISTRO: humble
+            IKFAST_TEST: true
+            CLANG_TIDY: pedantic
+            # Silent gmock/gtest warnings by picking more recent googletest version
+            AFTER_BUILD_UPSTREAM_WORKSPACE: |
+              git clone --depth 1 --quiet --branch 1.11.9000 https://github.com/ament/googletest "${BASEDIR}/upstream_ws/src/googletest"
+              builder_run_build "/opt/ros/${ROS_DISTRO}" "${BASEDIR}/upstream_ws" --packages-select gtest_vendor gmock_vendor
     env:
       CXXFLAGS: >-
         -Wall -Wextra -Wwrite-strings -Wunreachable-code -Wpointer-arith -Wredundant-decls
@@ -37,6 +37,9 @@ jobs:
         $(f="moveit2_$(sed 's/-.*$//' <<< "${{ matrix.env.IMAGE }}").repos"; test -r $f && echo $f)
       # Pull any updates to the upstream workspace (after restoring it from cache)
       AFTER_SETUP_UPSTREAM_WORKSPACE: vcs pull $BASEDIR/upstream_ws/src
+      # Uninstall binaries that are duplicated in the .repos file
+      # TODO(andyz): remove this once a sync containing 35b93c8 happens
+      AFTER_SETUP_UPSTREAM_WORKSPACE_EMBED: sudo apt remove ros-${{ matrix.env.ROS_DISTRO }}-moveit-msgs -y
       AFTER_SETUP_DOWNSTREAM_WORKSPACE: vcs pull $BASEDIR/downstream_ws/src
       # Clear the ccache stats before and log the stats after the build
       AFTER_SETUP_CCACHE: ccache --zero-stats --max-size=10.0G
@@ -81,7 +84,7 @@ jobs:
           # free up a lot of stuff from /usr/local
           sudo rm -rf /usr/local
           df -h
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: testspace-com/setup-testspace@v1
         if: github.repository == 'ros-planning/moveit2'
         with:

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(moveit_planners_ompl LANGUAGES CXX)
+project(moveit_planners_ompl)
 
 # Common cmake code applied to all moveit packages
 find_package(moveit_common REQUIRED)
@@ -27,13 +27,13 @@ include_directories(SYSTEM
 add_subdirectory(ompl_interface)
 
 install(TARGETS moveit_ompl_interface moveit_ompl_planner_plugin
-  EXPORT moveit_planners_omplTargets
+  EXPORT export_${PROJECT_NAME}
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
   RUNTIME DESTINATION bin
-  INCLUDES DESTINATION include/moveit_planners_ompl
+  INCLUDES DESTINATION include
 )
-ament_export_targets(moveit_planners_omplTargets HAS_LIBRARY_TARGET)
+ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(moveit_core ompl)
 
 pluginlib_export_plugin_description_file(moveit_core ompl_interface_plugin_description.xml)

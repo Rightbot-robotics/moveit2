@@ -34,10 +34,9 @@
 
 #pragma once
 
+#include <pilz_industrial_motion_planner/cartesian_limit.h>
 #include <pilz_industrial_motion_planner/joint_limits_container.h>
 #include <math.h>
-
-#include "cartesian_limits_parameters.hpp"
 
 namespace pilz_industrial_motion_planner
 {
@@ -69,21 +68,24 @@ public:
   const JointLimitsContainer& getJointLimitContainer() const;
 
   /**
-   * @brief Prints the cartesian limits set by user. Default values for limits are 0.0
+   * @brief Return if this LimitsContainer has defined cartesian limits
+   *
+   * @return True if container contains cartesian limits including maximum
+   * velocity/acceleration/deceleration
    */
-  void printCartesianLimits() const;
+  bool hasFullCartesianLimits() const;
 
   /**
    * @brief Set cartesian limits
    * @param cartesian_limit
    */
-  void setCartesianLimits(cartesian_limits::Params& cartesian_limit);
+  void setCartesianLimits(CartesianLimit& cartesian_limit);
 
   /**
    * @brief Return the cartesian limits
    * @return the cartesian limits
    */
-  const cartesian_limits::Params& getCartesianLimits() const;
+  const CartesianLimit& getCartesianLimits() const;
 
 private:
   /// Flag if joint limits where set
@@ -96,7 +98,7 @@ private:
   bool has_cartesian_limits_;
 
   /// The cartesian limits
-  cartesian_limits::Params cartesian_limits_;
+  CartesianLimit cartesian_limit_;
 };
 
 }  // namespace pilz_industrial_motion_planner
