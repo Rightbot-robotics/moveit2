@@ -94,6 +94,9 @@ public:
     if(!joint_positions.hasNaN()) {
       planning_scene->checkCollision(creq, cres, start_state);
     }
+    else {
+      RCLCPP_WARN(LOGGER, "start state joint position has NaN values");
+    }
 
     if (cres.collision)
     {

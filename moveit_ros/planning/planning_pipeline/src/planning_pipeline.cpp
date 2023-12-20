@@ -307,6 +307,15 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
   }
   bool valid = true;
 
+  if (solved && res.trajectory) {
+    std::size_t state_count = res.trajectory->getWayPointCount();
+    if(state_count < 2) {
+      RCLCPP_WARN(LOGGER, "waypoint count: %ld, discarding the motion plan", state_count);
+      solved = false;
+    }
+  }
+
+
   if (solved && res.trajectory)
   {
     std::size_t state_count = res.trajectory->getWayPointCount();
@@ -335,8 +344,10 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
               break;
             }
           }
-          if (!found)
+          if (!found) {
             problem = true;
+          }
+
         }
         if (problem)
         {
