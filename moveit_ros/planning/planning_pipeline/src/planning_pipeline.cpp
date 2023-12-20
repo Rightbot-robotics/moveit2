@@ -260,6 +260,7 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
   // Set planning pipeline active
   active_ = true;
 
+  RCLCPP_INFO(LOGGER, "================ generate plan with planner: %s", req.planner_id);
   // broadcast the request we are about to work on, if needed
   if (publish_received_requests_)
   {
@@ -312,6 +313,7 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
     if(state_count < 2) {
       RCLCPP_WARN(LOGGER, "waypoint count: %ld, discarding the motion plan", state_count);
       solved = false;
+      res.error_code = -2;
     }
   }
 
@@ -319,7 +321,7 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
   if (solved && res.trajectory)
   {
     std::size_t state_count = res.trajectory->getWayPointCount();
-    RCLCPP_DEBUG(LOGGER, "Motion planner reported a solution path with %ld states", state_count);
+    RCLCPP_INFO(LOGGER, "Motion planner reported a solution path with %ld states with planner: %s", state_count, req.planner_id);
     if (check_solution_paths_)
     {
       visualization_msgs::msg::MarkerArray arr;
