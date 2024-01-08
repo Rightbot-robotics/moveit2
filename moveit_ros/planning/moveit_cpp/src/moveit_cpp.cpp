@@ -78,6 +78,8 @@ MoveItCpp::MoveItCpp(const rclcpp::Node::SharedPtr& node, const Options& options
 
   trajectory_execution_manager_ = std::make_shared<trajectory_execution_manager::TrajectoryExecutionManager>(
       node_, getRobotModel(), planning_scene_monitor_->getStateMonitor());
+  right_arm_trajectory_execution_manager_ = std::make_shared<trajectory_execution_manager::TrajectoryExecutionManager>(
+      node_, getRobotModel(), planning_scene_monitor_->getStateMonitor());
 
   RCLCPP_DEBUG(LOGGER, "MoveItCpp running");
 }
@@ -213,19 +215,38 @@ MoveItCpp::execute(const robot_trajectory::RobotTrajectoryPtr& robot_trajectory,
 
   const std::string group_name = robot_trajectory->getGroupName();
 
-  // Check if there are controllers that can handle the execution
-  if (!trajectory_execution_manager_->ensureActiveControllersForGroup(group_name))
-  {
-    RCLCPP_ERROR(LOGGER, "Execution failed! No active controllers configured for group '%s'", group_name.c_str());
-    return moveit_controller_manager::ExecutionStatus::ABORTED;
+  if(group_name == "arm"){
+    // Check if there are controllers that can handle the execution
+    if (!trajectory_execution_manager_->ensureActiveControllersForGroup(group_name))
+    {
+      RCLCPP_ERROR(LOGGER, "Execution failed! No active controllers configured for group '%s'", group_name.c_str());
+      return moveit_controller_manager::ExecutionStatus::ABORTED;
+    }
+
+    // Execute trajectory
+    RCLCPP_ERROR(LOGGER, "== accessing trajectory execution manager");
+    moveit_msgs::msg::RobotTrajectory robot_trajectory_msg;
+    robot_trajectory->getRobotTrajectoryMsg(robot_trajectory_msg);
+    trajectory_execution_manager_->push(robot_trajectory_msg, controllers);
+    trajectory_execution_manager_->execute();
+    return trajectory_execution_manager_->waitForExecution();
+  } else {
+    // Check if there are controllers that can handle the execution
+    if (!right_arm_trajectory_execution_manager_->ensureActiveControllersForGroup(group_name))
+    {
+      RCLCPP_ERROR(LOGGER, "Execution failed! No active controllers configured for group '%s'", group_name.c_str());
+      return moveit_controller_manager::ExecutionStatus::ABORTED;
+    }
+
+    // Execute trajectory
+    RCLCPP_ERROR(LOGGER, "== accessing trajectory execution manager");
+    moveit_msgs::msg::RobotTrajectory robot_trajectory_msg;
+    robot_trajectory->getRobotTrajectoryMsg(robot_trajectory_msg);
+    right_arm_trajectory_execution_manager_->push(robot_trajectory_msg, controllers);
+    right_arm_trajectory_execution_manager_->execute();
+    return right_arm_trajectory_execution_manager_->waitForExecution();
   }
 
-  // Execute trajectory
-  moveit_msgs::msg::RobotTrajectory robot_trajectory_msg;
-  robot_trajectory->getRobotTrajectoryMsg(robot_trajectory_msg);
-  trajectory_execution_manager_->push(robot_trajectory_msg, controllers);
-  trajectory_execution_manager_->execute();
-  return trajectory_execution_manager_->waitForExecution();
 }
 
 bool MoveItCpp::terminatePlanningPipeline(const std::string& pipeline_name)
