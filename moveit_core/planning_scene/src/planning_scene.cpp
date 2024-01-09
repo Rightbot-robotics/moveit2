@@ -2207,7 +2207,7 @@ bool PlanningScene::isPathValid(const robot_trajectory::RobotTrajectory& traject
 
     Eigen::VectorXd joint_positions;
     //TODO: change joint model group 
-    st.copyJointGroupPositions(robot_model_->getJointModelGroup("arm"), joint_positions);
+    st.copyJointGroupPositions(robot_model_->getJointModelGroup(group), joint_positions);
               
     if(!joint_positions.hasNaN()) { 
       if (isStateColliding(st, group, verbose))
