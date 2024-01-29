@@ -193,6 +193,8 @@ private:
   // Execution
   trajectory_execution_manager::TrajectoryExecutionManagerPtr trajectory_execution_manager_;
   trajectory_execution_manager::TrajectoryExecutionManagerPtr right_arm_trajectory_execution_manager_;
+  trajectory_execution_manager::TrajectoryExecutionManagerPtr conveyor_trajectory_execution_manager_;
+  trajectory_execution_manager::TrajectoryExecutionManagerPtr default_trajectory_execution_manager_;
 
   /** \brief Initialize and setup the planning scene monitor */
   bool loadPlanningSceneMonitor(const PlanningSceneMonitorOptions& options);

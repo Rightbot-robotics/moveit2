@@ -77,8 +77,12 @@ MoveItCpp::MoveItCpp(const rclcpp::Node::SharedPtr& node, const Options& options
   }
 
   trajectory_execution_manager_ = std::make_shared<trajectory_execution_manager::TrajectoryExecutionManager>(
-      node_, getRobotModel(), planning_scene_monitor_->getStateMonitor());
+      node_, getRobotModel(), planning_scene_monitor_->getStateMonitor()); // left_arm traj execution manager
   right_arm_trajectory_execution_manager_ = std::make_shared<trajectory_execution_manager::TrajectoryExecutionManager>(
+      node_, getRobotModel(), planning_scene_monitor_->getStateMonitor()); // right_arm traj execution manager
+  conveyor_trajectory_execution_manager_ = std::make_shared<trajectory_execution_manager::TrajectoryExecutionManager>(
+      node_, getRobotModel(), planning_scene_monitor_->getStateMonitor()); // conveyor traj execution manager
+  default_trajectory_execution_manager_ = std::make_shared<trajectory_execution_manager::TrajectoryExecutionManager>(
       node_, getRobotModel(), planning_scene_monitor_->getStateMonitor());
 
   RCLCPP_DEBUG(LOGGER, "MoveItCpp running");
@@ -224,13 +228,12 @@ MoveItCpp::execute(const robot_trajectory::RobotTrajectoryPtr& robot_trajectory,
     }
 
     // Execute trajectory
-    RCLCPP_ERROR(LOGGER, "== accessing trajectory execution manager");
     moveit_msgs::msg::RobotTrajectory robot_trajectory_msg;
     robot_trajectory->getRobotTrajectoryMsg(robot_trajectory_msg);
     trajectory_execution_manager_->push(robot_trajectory_msg, controllers);
     trajectory_execution_manager_->execute();
     return trajectory_execution_manager_->waitForExecution();
-  } else {
+  } else if (group_name == "right_arm"){
     // Check if there are controllers that can handle the execution
     if (!right_arm_trajectory_execution_manager_->ensureActiveControllersForGroup(group_name))
     {
@@ -239,12 +242,40 @@ MoveItCpp::execute(const robot_trajectory::RobotTrajectoryPtr& robot_trajectory,
     }
 
     // Execute trajectory
-    RCLCPP_ERROR(LOGGER, "== accessing trajectory execution manager");
     moveit_msgs::msg::RobotTrajectory robot_trajectory_msg;
     robot_trajectory->getRobotTrajectoryMsg(robot_trajectory_msg);
     right_arm_trajectory_execution_manager_->push(robot_trajectory_msg, controllers);
     right_arm_trajectory_execution_manager_->execute();
     return right_arm_trajectory_execution_manager_->waitForExecution();
+  } else if(group_name == "dc_joint"){
+    // Check if there are controllers that can handle the execution
+    if (!conveyor_trajectory_execution_manager_->ensureActiveControllersForGroup(group_name))
+    {
+      RCLCPP_ERROR(LOGGER, "Execution failed! No active controllers configured for group '%s'", group_name.c_str());
+      return moveit_controller_manager::ExecutionStatus::ABORTED;
+    }
+
+    // Execute trajectory
+    moveit_msgs::msg::RobotTrajectory robot_trajectory_msg;
+    robot_trajectory->getRobotTrajectoryMsg(robot_trajectory_msg);
+    conveyor_trajectory_execution_manager_->push(robot_trajectory_msg, controllers);
+    conveyor_trajectory_execution_manager_->execute();
+    return conveyor_trajectory_execution_manager_->waitForExecution();
+  } else {
+    // Check if there are controllers that can handle the execution
+    if (!default_trajectory_execution_manager_->ensureActiveControllersForGroup(group_name))
+    {
+      RCLCPP_ERROR(LOGGER, "Execution failed! No active controllers configured for group '%s'", group_name.c_str());
+      return moveit_controller_manager::ExecutionStatus::ABORTED;
+    }
+
+    // Execute trajectory
+    moveit_msgs::msg::RobotTrajectory robot_trajectory_msg;
+    robot_trajectory->getRobotTrajectoryMsg(robot_trajectory_msg);
+    default_trajectory_execution_manager_->push(robot_trajectory_msg, controllers);
+    default_trajectory_execution_manager_->execute();
+    return default_trajectory_execution_manager_->waitForExecution();
+
   }
 
 }
