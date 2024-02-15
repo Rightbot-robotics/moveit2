@@ -311,6 +311,7 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
   {
     std::size_t state_count = res.trajectory->getWayPointCount();
     RCLCPP_DEBUG(LOGGER, "Motion planner reported a solution path with %ld states", state_count);
+    auto path_validity_check_start_time = std::chrono::system_clock::now();
     if (check_solution_paths_)
     {
       visualization_msgs::msg::MarkerArray arr;
@@ -408,6 +409,9 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
         RCLCPP_DEBUG(LOGGER, "Planned path was found to be valid when rechecked");
       contacts_publisher_->publish(arr);
     }
+    auto path_validity_check_duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now() - path_validity_check_start_time);
+    RCLCPP_INFO(LOGGER, "Path validity check took %ld ms", path_validity_check_duration.count());
   }
 
   // display solution path if needed

@@ -602,8 +602,9 @@ ompl_interface::ModelBasedPlanningContext::constructPlannerTerminationCondition(
   // the first feasible solution.
   else if (termination_and_params[0] == "ExactSolution")
   {
+    double interval = 0.01;
     return ob::plannerOrTerminationCondition(
-        ob::timedPlannerTerminationCondition(timeout - ompl::time::seconds(ompl::time::now() - start)),
+        ob::timedPlannerTerminationCondition((timeout - ompl::time::seconds(ompl::time::now() - start)), interval),
         ob::exactSolnPlannerTerminationCondition(ompl_simple_setup_->getProblemDefinition()));
   }
   else

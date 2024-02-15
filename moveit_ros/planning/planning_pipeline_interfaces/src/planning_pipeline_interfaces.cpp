@@ -133,6 +133,7 @@ const std::vector<::planning_interface::MotionPlanResponse> planWithParallelPipe
   }
 
   // Wait for threads to finish
+  auto planning_thread_wait_start_time = std::chrono::high_resolution_clock::now();
   for (auto& planning_thread : planning_threads)
   {
     if (planning_thread.joinable())
@@ -140,6 +141,9 @@ const std::vector<::planning_interface::MotionPlanResponse> planWithParallelPipe
       planning_thread.join();
     }
   }
+  auto planning_thread_wait_duration = std::chrono::duration_cast<std::chrono::microseconds>(
+      std::chrono::high_resolution_clock::now() - planning_thread_wait_start_time);
+  RCLCPP_INFO(LOGGER, "Planning pipeline wait time: %ld microseconds", planning_thread_wait_duration.count());
 
   // If a solution selection function is provided, it is used to compute the return value
   if (solution_selection_function)
