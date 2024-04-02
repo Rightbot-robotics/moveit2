@@ -181,6 +181,8 @@ public:
   /** \brief Utility to terminate the given planning pipeline */
   bool terminatePlanningPipeline(const std::string& pipeline_name);
 
+  void terminateTrajectory(const std::string& group_name);
+
 private:
   //  Core properties and instances
   rclcpp::Node::SharedPtr node_;

@@ -308,4 +308,17 @@ std::shared_ptr<tf2_ros::Buffer> MoveItCpp::getTFBuffer()
   return planning_scene_monitor_->getTFClient();
 }
 
+void MoveItCpp::terminateTrajectory(const std::string& group_name){
+     
+  if(group_name == "arm"){
+    trajectory_execution_manager_->stopExecution(true);
+  } else if (group_name == "right_arm"){
+    right_arm_trajectory_execution_manager_->stopExecution(true);
+  }  else if(group_name == "dc_joint"){
+    conveyor_trajectory_execution_manager_->stopExecution(true);
+  } else {
+    default_trajectory_execution_manager_->stopExecution(true);
+  }
+}
+
 }  // namespace moveit_cpp
