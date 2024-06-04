@@ -624,9 +624,13 @@ void ompl_interface::ModelBasedPlanningContext::setCompleteInitialState(
 
 void ompl_interface::ModelBasedPlanningContext::clear()
 {
+  ompl_simple_setup_->clear();
+  RCLCPP_DEBUG(LOGGER, "%s:clearing ompl simple setup by default", name_.c_str());
   if (!multi_query_planning_enabled_)
   {
     ompl_simple_setup_->clear();
+    RCLCPP_DEBUG(LOGGER, "%s: multi_query_planning disabled. clearing ompl simple setup", name_.c_str());
+
   }
   else
   {
@@ -638,6 +642,7 @@ void ompl_interface::ModelBasedPlanningContext::clear()
     if (planner != nullptr)
     {
       planner->clearValidity();
+      RCLCPP_DEBUG(LOGGER, "%s: multi_query_planning enabled. planner is LazyPRM, resetting validity flags", name_.c_str());
     }
   }
   ompl_simple_setup_->clearStartStates();
@@ -743,10 +748,16 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
   // clear previously computed solutions
   ompl_simple_setup_->getProblemDefinition()->clearSolutionPaths();
   const ob::PlannerPtr planner = ompl_simple_setup_->getPlanner();
-  if (planner && !multi_query_planning_enabled_)
+//  if (planner && !multi_query_planning_enabled_)
+//  {
+//    planner->clear();
+//  }
+  if (planner)
   {
     planner->clear();
+    RCLCPP_DEBUG(LOGGER, "clearing planner in preSolve step for all cases");
   }
+
   startSampling();
   ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->resetMotionCounter();
 }
