@@ -344,6 +344,17 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
           if (index.size() == 1 && index[0] == 0)
           {  // ignore cases when the robot starts at invalid location
             RCLCPP_DEBUG(LOGGER, "It appears the robot is starting at an invalid state, but that is ok.");
+
+            const moveit::core::RobotState& robot_state = res.trajectory->getWayPoint(0);
+            Eigen::VectorXd joint_positions;
+            //TODO: change joint model group
+            robot_state.copyJointGroupPositions(robot_model_->getJointModelGroup(req.group_name), joint_positions);
+
+            if(joint_positions.hasNaN()) {
+              valid = false;
+              res.error_code.val = moveit_msgs::msg::MoveItErrorCodes::INVALID_MOTION_PLAN;
+              RCLCPP_WARN(LOGGER, "start state has NaN states . returning invalid motion plan");
+            }
           }
           else
           {
@@ -365,11 +376,11 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
             {
               // check validity with verbose on
               const moveit::core::RobotState& robot_state = res.trajectory->getWayPoint(it);
-              
+
               Eigen::VectorXd joint_positions;
-              //TODO: change joint model group 
-              robot_state.copyJointGroupPositions(robot_model_->getJointModelGroup("arm"), joint_positions);
-              
+              //TODO: change joint model group
+              robot_state.copyJointGroupPositions(robot_model_->getJointModelGroup(req.group_name), joint_positions);
+
               if(!joint_positions.hasNaN()) {
                   planning_scene->isStateValid(robot_state, req.path_constraints, req.group_name, true);
 
@@ -390,10 +401,8 @@ bool planning_pipeline::PlanningPipeline::generatePlan(const planning_scene::Pla
                   }
               }
               else {
-                RCLCPP_WARN(LOGGER, "discarding a waypoint of trajectory for collision checking");
+                RCLCPP_WARN(LOGGER, "trajectory waypoint has NaN states. Not checking the state validity");
               }
-
-              
             }
             RCLCPP_ERROR(LOGGER, "Completed listing of explanations for invalid states.");
           }

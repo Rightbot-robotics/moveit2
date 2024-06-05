@@ -2219,7 +2219,8 @@ bool PlanningScene::isPathValid(const robot_trajectory::RobotTrajectory& traject
 
     }
     else {
-      RCLCPP_WARN(LOGGER, "joint pos has NaN values in is path valid check");
+      RCLCPP_WARN(LOGGER, "[is_path_valid]trajectory waypoint has NaN values at index: %d, traj_size:%d",i ,n_wp);
+      this_state_valid = false;
     }
     
     
