@@ -131,6 +131,10 @@ bool StateValidityChecker::isValid(const ompl::base::State* state, bool verbose)
       const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
     }
   }
+  else {
+    RCLCPP_ERROR(LOGGER, "joint pos has NaN. returning true for collision in validity check");
+    res.collision = true;
+  }
   
   return !res.collision;
 }
@@ -191,6 +195,10 @@ bool StateValidityChecker::isValid(const ompl::base::State* state, double& dist,
     planning_context_->getPlanningScene()->checkCollision(
         verbose ? collision_request_with_distance_verbose_ : collision_request_with_distance_, res, *robot_state);
     dist = res.distance;
+  }
+  else {
+    RCLCPP_ERROR(LOGGER, "joint pos has NaN. returning true for collision in validity check");
+    res.collision = true;
   }
   return !res.collision;
 }
@@ -303,6 +311,10 @@ bool ConstrainedPlanningStateValidityChecker::isValid(const ompl::base::State* w
       const_cast<ob::State*>(state)->as<ModelBasedStateSpace::StateType>()->markInvalid();
     }
   }
+  else {
+    RCLCPP_ERROR(LOGGER, "joint pos has NaN. returning true for collision in constrained validity check");
+    res.collision = true;
+  }
   return !res.collision;
 }
 
@@ -360,6 +372,10 @@ bool ConstrainedPlanningStateValidityChecker::isValid(const ompl::base::State* w
     planning_context_->getPlanningScene()->checkCollision(
         verbose ? collision_request_with_distance_verbose_ : collision_request_with_distance_, res, *robot_state);
     dist = res.distance;
+  }
+  else {
+    RCLCPP_ERROR(LOGGER, "joint pos has NaN. returning true for collision in constrained validity check");
+    res.collision = true;
   }
   return !res.collision;
 }
