@@ -268,7 +268,13 @@ bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   std::chrono::duration<double> elapsed_seconds = std::chrono::steady_clock::now() - time_start;
   res.planning_time = elapsed_seconds.count();
 
-  return res.error_code.val == moveit_msgs::msg::MoveItErrorCodes::SUCCESS;
+  if(res.trajectory.size() > 2) {
+    return res.error_code.val == moveit_msgs::msg::MoveItErrorCodes::SUCCESS;
+  }
+  else {
+    return res.error_code.val == moveit_msgs::msg::MoveItErrorCodes::PLANNING_FAILED;
+  }
+
 }
 
 bool StompPlanningContext::solve(planning_interface::MotionPlanDetailedResponse& /*res*/)
