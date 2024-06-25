@@ -777,7 +777,7 @@ bool ompl_interface::ModelBasedPlanningContext::postSolve()
   std::stringstream debug_out;
   ompl_simple_setup_->print(debug_out);
   RCLCPP_DEBUG(LOGGER, "%s", rclcpp::get_c_string(debug_out.str()));
-  return status
+  return status;
 }
 
 bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanResponse& res)
@@ -975,9 +975,9 @@ const moveit_msgs::msg::MoveItErrorCodes ompl_interface::ModelBasedPlanningConte
   }
 
   bool status = postSolve();
-  if (false == status && moveit_msgs::msg::MoveItErrorCodes::SUCCESS== result.val) {
-    result.val = moveit_msgs::msg::MoveItErrorCodes::FAILURE;
-  }
+//  if (false == status && moveit_msgs::msg::MoveItErrorCodes::SUCCESS== result.val) {
+//    result.val = moveit_msgs::msg::MoveItErrorCodes::FAILURE;
+//  }
   return result;
 }
 
