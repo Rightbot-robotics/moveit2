@@ -762,17 +762,22 @@ void ompl_interface::ModelBasedPlanningContext::preSolve()
   ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->resetMotionCounter();
 }
 
-void ompl_interface::ModelBasedPlanningContext::postSolve()
+bool ompl_interface::ModelBasedPlanningContext::postSolve()
 {
+  bool status = true;
   stopSampling();
   int v = ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->getValidMotionCount();
   int iv = ompl_simple_setup_->getSpaceInformation()->getMotionValidator()->getInvalidMotionCount();
   RCLCPP_DEBUG(LOGGER, "There were %d valid motions and %d invalid motions.", v, iv);
+  if (0 == v && 0 == iv) {
+    status = false;
+  }
 
   // Debug OMPL setup and solution
   std::stringstream debug_out;
-  //ompl_simple_setup_->print(debug_out);
+  ompl_simple_setup_->print(debug_out);
   RCLCPP_DEBUG(LOGGER, "%s", rclcpp::get_c_string(debug_out.str()));
+  return status
 }
 
 bool ompl_interface::ModelBasedPlanningContext::solve(planning_interface::MotionPlanResponse& res)
@@ -969,7 +974,10 @@ const moveit_msgs::msg::MoveItErrorCodes ompl_interface::ModelBasedPlanningConte
     }
   }
 
-  postSolve();
+  bool status = postSolve();
+  if (false == status && moveit_msgs::msg::MoveItErrorCodes::SUCCESS== result.val) {
+    result.val = moveit_msgs::msg::MoveItErrorCodes::FAILURE;
+  }
   return result;
 }
 

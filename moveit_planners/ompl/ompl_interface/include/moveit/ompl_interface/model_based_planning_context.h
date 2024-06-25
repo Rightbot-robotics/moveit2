@@ -346,7 +346,7 @@ public:
 
 protected:
   void preSolve();
-  void postSolve();
+  bool postSolve();
 
   void startSampling();
   void stopSampling();
